@@ -2,3 +2,7 @@
 *.pyc
 __pycache__
 env
+/upload-dist.sh
+/cognitojwt.egg-info/
+/build/
+/dist/
