@@ -9,8 +9,11 @@ from typing import List
 logger = logging.getLogger(__name__)
 
 
+PUBLIC_KEYS_URL_TEMPLATE = 'https://cognito-idp.{}.amazonaws.com/{}/.well-known/jwks.json'
+
+
 class CognitoJWTException(Exception):
-    pass
+    """Raised when something went wrong in token verification proccess"""
 
 
 @lru_cache(maxsize=1)
@@ -30,7 +33,7 @@ def get_unverified_claims(token: str) -> dict:
 
 
 def get_public_key(token: str, region: str, userpool_id: str):
-    keys_url: str = 'https://cognito-idp.{}.amazonaws.com/{}/.well-known/jwks.json'.format(region, userpool_id)
+    keys_url: str = PUBLIC_KEYS_URL_TEMPLATE.format(region, userpool_id)
     keys: list = get_keys(keys_url)
     headers = get_unverified_headers(token)
     kid = headers['kid']
@@ -54,7 +57,7 @@ def decode(token: str, region: str, userpool_id: str, app_client_id: str, testmo
     if not public_key.verify(message.encode('utf-8'), decoded_signature):
         raise CognitoJWTException('Signature verification failed')
 
-    logger.info('Signature successfully verified')
+    logger.debug('Signature successfully verified')
     claims = get_unverified_claims(token)
 
     if time.time() > claims['exp'] and not testmode:
