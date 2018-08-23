@@ -14,7 +14,7 @@ setup(
     author_email='borisrozumnuk@gmail.com',
     license='MIT',
     platforms='Any',
-    install_requires=['python-jose', 'requests'],
+    install_requires=['python-jose', 'requests', 'aiohttp', 'async_lru'],
     keywords='Amazin Cognito JWT',
     packages=['cognitojwt'],
     classifiers=[

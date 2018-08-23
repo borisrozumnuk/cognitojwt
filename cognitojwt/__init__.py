@@ -1,4 +1,3 @@
 name = "example_pkg"
 
-
-from .cognito import decode, CognitoJWTException
+from .cognito import decode, decode_async, CognitoJWTException
