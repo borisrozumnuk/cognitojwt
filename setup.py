@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='cognitojwt',
-    version='0.4.1',
+    version='0.4.2',
     description='Decode and verify Amazon Cognito JWT tokens',
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -15,7 +15,7 @@ setup(
     license='MIT',
     platforms='Any',
     install_requires=['python-jose', 'requests', 'aiohttp', 'async_lru'],
-    keywords='Amazin Cognito JWT',
+    keywords='Amazon Cognito JWT',
     packages=['cognitojwt'],
     classifiers=[
         'Development Status :: 4 - Beta',
