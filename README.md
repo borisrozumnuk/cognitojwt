@@ -1,6 +1,6 @@
 # Decode and verify Amazon Cognito JWT tokens
 
-### Note: tested on Python3.6
+### Note: works on Python >= 3.6
 
 ### Installation
 

@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='cognitojwt',
-    version='0.3',
+    version='0.4.0',
     description='Decode and verify Amazon Cognito JWT tokens',
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -19,6 +19,7 @@ setup(
     packages=['cognitojwt'],
     classifiers=[
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Operating System :: OS Independent',
     ],
     zip_safe=False)
