@@ -1,6 +1,6 @@
 # Decode and verify Amazon Cognito JWT tokens
 
-### Note: works on Python >= 3.6
+### Note: tested on Python >= 3.6, compatible with PEP-492 (async/await coroutines syntax)
 
 ### Installation
 
