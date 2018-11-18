@@ -1,3 +1,14 @@
-name = "example_pkg"
+from .async import decode_async
+from .cognito import decode
+from .exceptions import CognitoJWTException
 
-from .cognito import decode, decode_async, CognitoJWTException
+name = "cognitojwt"
+
+PUBLIC_KEYS_URL_TEMPLATE = 'https://cognito-idp.{}.amazonaws.com/{}/.well-known/jwks.json'
+
+
+__all__ = [
+    'CognitoJWTException',
+    'decode',
+    'decode_async'
+]
