@@ -1,10 +1,10 @@
-# Decode and verify Amazon Cognito JWT tokens
+# Decode and verify [Amazon Cognito](https://aws.amazon.com/cognito/) JWT tokens
 
 ### Note: tested on Python >= 3.6, compatible with PEP-492 (async/await coroutines syntax)
 
 ### Installation
 
-Package works in two modes: synchronous (requests as http-client) and asynchronous (aiohttp as http-client).
+Package works in two modes: synchronous - [requests](https://github.com/requests/requests) as http-client and asynchronous - [aiohttp](https://github.com/aio-libs/aiohttp) as http-client.
 In order to avoid installing unnecessary dependencies I separated installation flow into two modes:
 
 * Async mode - `pip install cognitojwt[async]`
