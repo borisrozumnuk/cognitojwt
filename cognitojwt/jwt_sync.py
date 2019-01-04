@@ -5,7 +5,7 @@ import requests
 from jose import jwk
 from jose.utils import base64url_decode
 
-from . import PUBLIC_KEYS_URL_TEMPLATE
+from .constants import PUBLIC_KEYS_URL_TEMPLATE
 from .exceptions import CognitoJWTException
 from .token_utils import get_unverified_claims, get_unverified_headers, check_expired, check_aud
 
@@ -48,3 +48,8 @@ def decode(token: str, region: str, userpool_id: str, app_client_id: str, testmo
     check_aud(claims['aud'], app_client_id)
 
     return claims
+
+
+__all__ = [
+    'decode'
+]

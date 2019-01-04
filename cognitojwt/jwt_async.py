@@ -5,7 +5,7 @@ from async_lru import alru_cache
 from jose import jwk
 from jose.utils import base64url_decode
 
-from . import PUBLIC_KEYS_URL_TEMPLATE
+from .constants import PUBLIC_KEYS_URL_TEMPLATE
 from .exceptions import CognitoJWTException
 from .token_utils import get_unverified_headers, get_unverified_claims, check_expired, check_aud
 
@@ -48,3 +48,8 @@ async def decode_async(token: str, region: str, userpool_id: str, app_client_id:
     check_aud(claims['aud'], app_client_id)
 
     return claims
+
+
+__all__ = [
+    'decode_async'
+]

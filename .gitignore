@@ -6,3 +6,4 @@ env
 /cognitojwt.egg-info/
 /build/
 /dist/
+/cognitojwt/tests.py
