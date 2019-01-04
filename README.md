@@ -21,7 +21,7 @@ USERPOOL_ID = 'eu-west-1_*******'
 APP_CLIENT_ID = '1p3*********'
 
 # Sync mode
-verified_claims = cognitojwt.decode(
+verified_claims: dict = cognitojwt.decode(
     id_token,
     REGION,
     USERPOOL_ID,
@@ -30,7 +30,7 @@ verified_claims = cognitojwt.decode(
 )
 
 # Async mode
-verified_claims = await cognitojwt.decode_async(
+verified_claims: dict = await cognitojwt.decode_async(
     id_token,
     REGION,
     USERPOOL_ID,
