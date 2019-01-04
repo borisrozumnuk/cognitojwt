@@ -12,7 +12,7 @@ In order to avoid installing unnecessary dependencies I separated installation f
 
 ### Usage
 
-```
+```python
 import cognitojwt
 
 id_token = '<YOUR_TOKEN_HERE>'
