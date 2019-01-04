@@ -3,9 +3,24 @@ from setuptools import setup
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+
+install_requires = [
+    'python-jose'
+]
+
+sync_require = [
+    'requests'
+]
+
+async_require = [
+    'aiohttp',
+    'async_lru'
+]
+
+
 setup(
     name='cognitojwt',
-    version='0.5.0',
+    version='1.0.3',
     description='Decode and verify Amazon Cognito JWT tokens',
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -14,7 +29,11 @@ setup(
     author_email='borisrozumnuk@gmail.com',
     license='MIT',
     platforms='Any',
-    install_requires=['python-jose', 'requests', 'aiohttp', 'async_lru'],
+    install_requires=install_requires,
+    extras_require={
+        'sync': sync_require,
+        'async': async_require
+    },
     keywords='Amazon Cognito JWT',
     packages=['cognitojwt'],
     classifiers=[
