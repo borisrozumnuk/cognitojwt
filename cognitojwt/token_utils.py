@@ -21,3 +21,11 @@ def check_expired(exp: int, testmode: bool = False) -> None:
 def check_aud(aud: str, app_client_id: str) -> None:
     if aud != app_client_id:
         raise CognitoJWTException('Token was not issued for this client id')
+
+
+__all__ = [
+    'get_unverified_headers',
+    'get_unverified_claims',
+    'check_expired',
+    'check_aud'
+]

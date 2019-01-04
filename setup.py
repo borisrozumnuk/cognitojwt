@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='cognitojwt',
-    version='0.4.3',
+    version='0.5.0',
     description='Decode and verify Amazon Cognito JWT tokens',
     long_description=long_description,
     long_description_content_type="text/markdown",
