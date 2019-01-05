@@ -10,7 +10,6 @@ deploy:
   user: borisrozumnuk
   distributions: sdist bdist_wheel
   skip_existing: true
-  password:
-    secure: N/ciMtXy5bvAjjHK1SsIPCPCFUQFrT1x8PK0GIRd3wenr7GWHISfjJrjOrnOiwM/BaxAPx2G8WAh06nJbelTY83j/fUOkdoV860N1LuBPtegNhwBgbXTI/XAI4lNV9zFSoDU4CYxB2TmJBXYHK1M4yCyFqbkR7DfiRWcVQMM99P7ndb3sLcLsGzFXF5RsHUitkVGm2VsqLMBGjKWMozHE2nrH3TBpXNAQA5x9zfTBQcQ0ah/CGCyH3jSCHPwUFZfALHRbZxdLY1KPgIyIy3mD6xiJ1CpQZQtJBiBPNlEMuylcR/GHcUHbrjOIDbTy2uOwj3laTq2Dm4kPtb31LhNbX3B8vVJOI5slOEETeL7CMkSaFftZLL8Teek5KZnO+6DLbTLM+HJfukZHQvNV+sUHYbeJrhn8wwwFgtJnYiToxxsHZRwuCcqE/qsmpkMcqSOl6x6nTPzRPFBosHiQhzJEseR/LyODbtPiKlFJff0M27EVhAO646trNsbOfvnrUHTHxtv0Ksg1q/oc1HUZYPOFc7Ai+unCDpAbP4BSkGf7njpjHvvEoIXum2NFzW/VYjGGmDhF5b7bE7qyq2O8M9mk+Rl1V0SRazH0oof+ZVtIZMi6aWeH1tL8AyOJnwIaAdj2sCrg+rGg3GxdVXONIu3E/177HRUM/+Www0xHDtSR08=
+  password: ${PYPI_PASS}
   only:
   - master
