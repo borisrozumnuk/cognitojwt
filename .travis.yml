@@ -8,7 +8,6 @@ install:
 - python -m pip install virtualenv
 - python -m virtualenv .venv
 - source .venv/bin/activate
-- python -m pip install -r requirements.txt
 - sudo -H pip install setuptools twine --upgrade
 
 deploy:
