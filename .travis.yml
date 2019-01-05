@@ -1,4 +1,4 @@
-sudo: required
+sudo: false
 language: python
 
 python:
@@ -6,7 +6,7 @@ python:
 
 install:
 - python -m pip install setuptools twine
-
+script: true
 deploy:
   provider: pypi
   user: borisrozumnuk
