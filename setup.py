@@ -20,7 +20,7 @@ async_require = [
 
 setup(
     name='cognitojwt',
-    version='1.0.3',
+    version='1.0.4',
     description='Decode and verify Amazon Cognito JWT tokens',
     long_description=long_description,
     long_description_content_type="text/markdown",

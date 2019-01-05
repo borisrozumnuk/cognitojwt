@@ -5,12 +5,7 @@ python:
   - "3.6"
 
 install:
-- python -m pip install virtualenv
-- python -m virtualenv .venv
-- source .venv/bin/activate
-- sudo -H pip install setuptools twine --upgrade
-script:
-- pip install .
+- python -m pip install setuptools twine
 
 deploy:
   provider: pypi
