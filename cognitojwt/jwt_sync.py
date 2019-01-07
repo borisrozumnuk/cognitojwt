@@ -8,7 +8,7 @@ from jose.utils import base64url_decode
 
 from .constants import PUBLIC_KEYS_URL_TEMPLATE
 from .exceptions import CognitoJWTException
-from .token_utils import get_unverified_claims, get_unverified_headers, check_expired, check_aud
+from .token_utils import get_unverified_claims, get_unverified_headers, check_expired, check_client_id
 
 
 @lru_cache(maxsize=1)
@@ -48,7 +48,7 @@ def decode(token: str, region: str, userpool_id: str, app_client_id: str=None, t
     check_expired(claims['exp'], testmode=testmode)
 
     if app_client_id:
-        check_aud(claims['aud'], app_client_id)
+        check_client_id(claims, app_client_id)
 
     return claims
 
