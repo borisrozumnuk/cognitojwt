@@ -1,6 +1,7 @@
 import os
 import pytest
 import cognitojwt
+from jose.backends import RSAKey
 
 
 TEST_ID_TOKEN = os.environ['TEST_ID_TOKEN']
@@ -55,3 +56,13 @@ async def test_decode_access_token_without_app_id():
         testmode=True
     )
     assert isinstance(claims, dict)
+
+
+@pytest.mark.asyncio
+async def test_get_public_key():
+    pub_key = await cognitojwt.jwt_async.get_public_key_async(
+        TEST_ACCESS_TOKEN,
+        AWS_COGNITO_REGION,
+        AWS_COGNITO_USERPOOL_ID
+    )
+    assert isinstance(pub_key, RSAKey)
