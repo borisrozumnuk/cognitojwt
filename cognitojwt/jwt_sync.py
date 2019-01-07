@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import List
+from typing import List, Dict, Optional
 import requests
 
 
@@ -34,7 +34,13 @@ def get_public_key(token: str, region: str, userpool_id: str):
     return jwk.construct(key)
 
 
-def decode(token: str, region: str, userpool_id: str, app_client_id: str=None, testmode=False) -> dict:
+def decode(
+        token: str,
+        region: str,
+        userpool_id: str,
+        app_client_id: Optional[str] = None,
+        testmode: bool = False
+) -> Dict:
     message, encoded_signature = str(token).rsplit('.', 1)
 
     decoded_signature = base64url_decode(encoded_signature.encode('utf-8'))
