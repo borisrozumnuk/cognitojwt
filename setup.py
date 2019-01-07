@@ -17,6 +17,14 @@ async_require = [
     'async_lru'
 ]
 
+test_require = {
+    'requests',
+    'aiohttp',
+    'async_lru',
+    'pytest==4.0.2',
+    'pytest-asyncio'
+}
+
 
 setup(
     name='cognitojwt',
@@ -32,7 +40,8 @@ setup(
     install_requires=install_requires,
     extras_require={
         'sync': sync_require,
-        'async': async_require
+        'async': async_require,
+        'test': test_require
     },
     keywords='Amazon Cognito JWT',
     packages=['cognitojwt'],
@@ -44,4 +53,5 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Operating System :: OS Independent',
     ],
-    zip_safe=False)
+    zip_safe=False
+)
