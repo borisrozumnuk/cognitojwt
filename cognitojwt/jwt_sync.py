@@ -38,7 +38,7 @@ def decode(
         token: str,
         region: str,
         userpool_id: str,
-        app_client_id: Optional[str] = None,
+        app_client_id: str = None,
         testmode: bool = False
 ) -> Dict:
     message, encoded_signature = str(token).rsplit('.', 1)

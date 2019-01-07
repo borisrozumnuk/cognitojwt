@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict
+from typing import List, Dict
 
 import aiohttp
 from async_lru import alru_cache
@@ -37,7 +37,7 @@ async def decode_async(
         token: str,
         region: str,
         userpool_id: str,
-        app_client_id: Optional[str] = None,
+        app_client_id: str = None,
         testmode: bool = False
 ) -> Dict:
     message, encoded_signature = str(token).rsplit('.', 1)
