@@ -27,8 +27,8 @@ verified_claims: dict = cognitojwt.decode(
     id_token,
     REGION,
     USERPOOL_ID,
-    APP_CLIENT_ID,
-    testmode=True # disable token expiration checking for testing purposes
+    app_client_id=APP_CLIENT_ID,  # Optional
+    testmode=True  # Disable token expiration check for testing purposes
 )
 
 # Async mode
@@ -36,8 +36,8 @@ verified_claims: dict = await cognitojwt.decode_async(
     id_token,
     REGION,
     USERPOOL_ID,
-    APP_CLIENT_ID,
-    testmode=True # disable token expiration checking for testing purposes
+    app_client_id=APP_CLIENT_ID,  # Optional
+    testmode=True  # Disable token expiration check for testing purposes
 )
 
 ```
