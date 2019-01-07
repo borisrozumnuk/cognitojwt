@@ -13,5 +13,6 @@ deploy:
   distributions: sdist bdist_wheel
   skip_existing: true
   password: ${PYPI_PASS}
-  only:
-  - release
+  on:
+    tags: true
+    branch: master
