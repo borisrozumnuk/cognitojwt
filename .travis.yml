@@ -4,7 +4,8 @@ python:
 - '3.6'
 install:
 - python -m pip install setuptools twine
-script: true
+- python -m pip install .[test]
+script: pytest
 deploy:
   provider: pypi
   user: borisrozumnuk
