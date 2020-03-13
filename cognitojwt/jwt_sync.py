@@ -1,3 +1,5 @@
+import json
+import os
 from functools import lru_cache
 from typing import List, Dict
 import requests
@@ -13,14 +15,17 @@ from .token_utils import get_unverified_claims, get_unverified_headers, check_ex
 
 @lru_cache(maxsize=1)
 def get_keys(keys_url: str) -> List[dict]:
-    r = requests.get(keys_url)
-    keys_response = r.json()
-    keys = keys_response.get('keys')
-    return keys
+    if keys_url.startswith("http"):
+        r = requests.get(keys_url)
+        keys_response = r.json()
+    else:
+        with open(keys_url, "r") as f:
+            keys_response = json.loads(f.read())
+    return keys_response.get('keys')
 
 
 def get_public_key(token: str, region: str, userpool_id: str):
-    keys_url: str = PUBLIC_KEYS_URL_TEMPLATE.format(region, userpool_id)
+    keys_url: str = os.environ.get('AWS_COGNITO_JWSK_PATH') or PUBLIC_KEYS_URL_TEMPLATE.format(region, userpool_id)
     keys: list = get_keys(keys_url)
     headers = get_unverified_headers(token)
     kid = headers['kid']

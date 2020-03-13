@@ -1,7 +1,12 @@
 import os
+import tempfile
+
+import requests
+
 import cognitojwt
 from jose.backends import RSAKey
 
+from cognitojwt.constants import PUBLIC_KEYS_URL_TEMPLATE
 
 TEST_ID_TOKEN = os.environ['TEST_ID_TOKEN']
 TEST_ACCESS_TOKEN = os.environ['TEST_ACCESS_TOKEN']
@@ -59,4 +64,22 @@ def test_get_public_key():
         AWS_COGNITO_REGION,
         AWS_COGNITO_USERPOOL_ID
     )
+    assert isinstance(pub_key, RSAKey)
+
+
+def test_get_public_key():
+
+    keys_url = PUBLIC_KEYS_URL_TEMPLATE.format(AWS_COGNITO_REGION, AWS_COGNITO_USERPOOL_ID)
+    r = requests.get(keys_url)
+    keys_response = r.text
+
+    with tempfile.NamedTemporaryFile(suffix='.json') as tf:
+        tf.write(keys_response.encode('utf-8'))
+        os.environ['AWS_COGNITO_JWSK_PATH'] = tf.name
+
+        pub_key = cognitojwt.jwt_sync.get_public_key(
+            TEST_ACCESS_TOKEN,
+            AWS_COGNITO_REGION,
+            AWS_COGNITO_USERPOOL_ID
+        )
     assert isinstance(pub_key, RSAKey)

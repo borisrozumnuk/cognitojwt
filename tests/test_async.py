@@ -1,8 +1,12 @@
 import os
+import tempfile
+
+import aiohttp
 import pytest
 import cognitojwt
 from jose.backends import RSAKey
 
+from cognitojwt.constants import PUBLIC_KEYS_URL_TEMPLATE
 
 TEST_ID_TOKEN = os.environ['TEST_ID_TOKEN']
 TEST_ACCESS_TOKEN = os.environ['TEST_ACCESS_TOKEN']
@@ -37,7 +41,7 @@ async def test_decode_id_token_without_app_id():
 
 @pytest.mark.asyncio
 async def test_decode_access_token_with_app_id():
-    claims = await cognitojwt.decode_async(
+    claims = await cognitojwt.jwt_async.decode_async(
         TEST_ID_TOKEN,
         AWS_COGNITO_REGION,
         AWS_COGNITO_USERPOOL_ID,
@@ -65,4 +69,24 @@ async def test_get_public_key():
         AWS_COGNITO_REGION,
         AWS_COGNITO_USERPOOL_ID
     )
+    assert isinstance(pub_key, RSAKey)
+
+
+@pytest.mark.asyncio
+async def test_get_public_key_local_jwks():
+
+    keys_url = PUBLIC_KEYS_URL_TEMPLATE.format(AWS_COGNITO_REGION, AWS_COGNITO_USERPOOL_ID)
+    async with aiohttp.ClientSession() as session:
+        async with session.get(keys_url) as resp:
+            response = await resp.text()
+
+    with tempfile.NamedTemporaryFile(suffix='.json') as tf:
+        tf.write(response.encode('utf-8'))
+        os.environ['AWS_COGNITO_JWSK_PATH'] = tf.name
+
+        pub_key = await cognitojwt.jwt_async.get_public_key_async(
+            TEST_ACCESS_TOKEN,
+            AWS_COGNITO_REGION,
+            AWS_COGNITO_USERPOOL_ID
+        )
     assert isinstance(pub_key, RSAKey)
