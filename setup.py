@@ -30,7 +30,7 @@ test_require = {
 
 setup(
     name='cognitojwt',
-    version='1.1.0',
+    version='1.2.0',
     description='Decode and verify Amazon Cognito JWT tokens',
     long_description=long_description,
     long_description_content_type="text/markdown",
