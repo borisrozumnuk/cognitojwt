@@ -21,7 +21,8 @@ async def get_keys_async(keys_url: str) -> List[dict]:
                 response = await resp.json()
     else:
         async with AIOFile(keys_url, 'r') as afp:
-            response = json.loads(await afp.read())
+            f = await afp.read()
+            response = json.loads(f)
     return response.get('keys')
 
 

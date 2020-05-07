@@ -5,6 +5,8 @@ python:
 install:
 - python -m pip install setuptools twine
 - python -m pip install .[test]
+- python -m pip install .[async]
+- python -m pip install .[sync]
 - python -m pip install attrs==17.4.0
 script: pytest
 deploy:

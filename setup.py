@@ -23,7 +23,7 @@ test_require = {
     'aiohttp',
     'async_lru',
     'pytest==5.4.0',
-    'pytest-asyncio',
+    'pytest-asyncio==0.12.0',
     'attrs==19.1.0'
 }
 
