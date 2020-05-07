@@ -1,5 +1,8 @@
+import json
+import os
 from typing import List, Dict
 
+from aiofile import AIOFile
 import aiohttp
 from async_lru import alru_cache
 from jose import jwk
@@ -12,14 +15,18 @@ from .token_utils import get_unverified_headers, get_unverified_claims, check_ex
 
 @alru_cache(maxsize=1)
 async def get_keys_async(keys_url: str) -> List[dict]:
-    async with aiohttp.ClientSession() as session:
-        async with session.get(keys_url) as resp:
-            response = await resp.json()
-            return response.get('keys')
+    if keys_url.startswith("http"):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(keys_url) as resp:
+                response = await resp.json()
+    else:
+        async with AIOFile(keys_url, 'r') as afp:
+            response = json.loads(await afp.read())
+    return response.get('keys')
 
 
 async def get_public_key_async(token: str, region: str, userpool_id: str):
-    keys_url: str = PUBLIC_KEYS_URL_TEMPLATE.format(region, userpool_id)
+    keys_url: str = os.environ.get('AWS_COGNITO_JWSK_PATH') or PUBLIC_KEYS_URL_TEMPLATE.format(region, userpool_id)
     keys: list = await get_keys_async(keys_url)
     headers = get_unverified_headers(token)
     kid = headers['kid']

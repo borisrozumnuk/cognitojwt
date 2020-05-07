@@ -13,6 +13,7 @@ sync_require = [
 ]
 
 async_require = [
+    'aiofile',
     'aiohttp',
     'async_lru'
 ]
@@ -22,7 +23,8 @@ test_require = {
     'aiohttp',
     'async_lru',
     'pytest==4.0.2',
-    'pytest-asyncio'
+    'pytest-asyncio',
+    'attrs==19.1.0'
 }
 
 
