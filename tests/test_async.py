@@ -83,12 +83,12 @@ async def test_get_public_key_local_jwks():
     with tempfile.NamedTemporaryFile(suffix='.json') as tf:
         tf.write(response.encode('utf-8'))
         tf.seek(0)
-        os.environ['AWS_COGNITO_JWSK_PATH'] = tf.name
+        os.environ['AWS_COGNITO_JWKS_PATH'] = tf.name
 
         pub_key = await cognitojwt.jwt_async.get_public_key_async(
             TEST_ACCESS_TOKEN,
             AWS_COGNITO_REGION,
             AWS_COGNITO_USERPOOL_ID
         )
-        del os.environ['AWS_COGNITO_JWSK_PATH']
+        del os.environ['AWS_COGNITO_JWKS_PATH']
     assert isinstance(pub_key, RSAKey)
