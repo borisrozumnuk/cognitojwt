@@ -27,7 +27,7 @@ async def get_keys_async(keys_url: str) -> List[dict]:
 
 
 async def get_public_key_async(token: str, region: str, userpool_id: str):
-    keys_url: str = os.environ.get('AWS_COGNITO_JWSK_PATH') or PUBLIC_KEYS_URL_TEMPLATE.format(region, userpool_id)
+    keys_url: str = os.environ.get('AWS_COGNITO_JWKS_PATH') or PUBLIC_KEYS_URL_TEMPLATE.format(region, userpool_id)
     keys: list = await get_keys_async(keys_url)
     headers = get_unverified_headers(token)
     kid = headers['kid']

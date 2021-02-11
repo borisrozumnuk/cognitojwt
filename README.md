@@ -43,4 +43,4 @@ verified_claims: dict = await cognitojwt.decode_async(
 ```
 
 Note: if the application is deployed inside a private vpc without internet gateway, the application will not be able to download the JWKS file.
-In this case set the `AWS_COGNITO_JWSK_PATH` environment variable referencing the absolute or relative path of the jwks.json file.
+In this case set the `AWS_COGNITO_JWKS_PATH` environment variable referencing the absolute or relative path of the jwks.json file.
