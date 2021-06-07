@@ -1,6 +1,6 @@
 import json
 import os
-from typing import List, Dict
+from typing import List, Dict, Optional, Union, Container
 
 from aiofile import AIOFile
 import aiohttp
@@ -45,7 +45,7 @@ async def decode_async(
         token: str,
         region: str,
         userpool_id: str,
-        app_client_id: str = None,
+        app_client_id: Optional[Union[str, Container[str]]] = None,
         testmode: bool = False
 ) -> Dict:
     message, encoded_signature = str(token).rsplit('.', 1)

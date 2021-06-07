@@ -46,5 +46,8 @@ def test_check_expired():
 def test_check_client_id():
     claims = token_utils.get_unverified_claims(TEST_ACCESS_TOKEN)
     token_utils.check_client_id(claims, AWS_COGNITO_APP_CLIENT_ID)
+    token_utils.check_client_id(claims, ['1001001', AWS_COGNITO_APP_CLIENT_ID])
     with pytest.raises(CognitoJWTException):
         token_utils.check_client_id(claims, '1001001')
+    with pytest.raises(CognitoJWTException):
+        token_utils.check_client_id(claims, f'100{AWS_COGNITO_APP_CLIENT_ID}001')
