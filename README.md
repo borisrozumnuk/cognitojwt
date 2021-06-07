@@ -44,3 +44,16 @@ verified_claims: dict = await cognitojwt.decode_async(
 
 Note: if the application is deployed inside a private vpc without internet gateway, the application will not be able to download the JWKS file.
 In this case set the `AWS_COGNITO_JWKS_PATH` environment variable referencing the absolute or relative path of the jwks.json file.
+
+It is possible to allow multiple app client ids by passing the value as a Container instance such as a list or tuple:
+```python
+ALLOWED_CLIENT_IDS = ('client_one', 'client_two')
+
+verified_claims: dict = cognitojwt.decode(
+    id_token,
+    REGION,
+    USERPOOL_ID,
+    app_client_id=ALLOWED_CLIENT_IDS,
+    testmode=True  # Disable token expiration check for testing purposes
+)
+```
