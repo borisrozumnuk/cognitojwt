@@ -1,6 +1,6 @@
 import time
+from typing import Dict, Union, Container
 
-from typing import Dict
 from jose import jwt
 
 from .exceptions import CognitoJWTException
@@ -25,14 +25,17 @@ def check_expired(exp: int, testmode: bool = False) -> None:
         raise CognitoJWTException('Token is expired')
 
 
-def check_client_id(claims: Dict, app_client_id: str) -> None:
+def check_client_id(claims: Dict, app_client_id: Union[str, Container[str]]) -> None:
     token_use = claims['token_use']
 
     client_id_key: str = CLIENT_ID_KEYS.get(token_use)
     if not client_id_key:
         raise CognitoJWTException(f'Invalid token_use: {token_use}. Valid values: {list(CLIENT_ID_KEYS.keys())}')
 
-    if claims[client_id_key] != app_client_id:
+    if isinstance(app_client_id, str):
+        app_client_id = (app_client_id,)
+
+    if claims[client_id_key] not in app_client_id:
         raise CognitoJWTException('Token was not issued for this client id audience')
 
 
