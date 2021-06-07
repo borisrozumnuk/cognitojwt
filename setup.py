@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 
 install_requires = [
-    'python-jose'
+    'python-jose[cryptography]'
 ]
 
 sync_require = [
