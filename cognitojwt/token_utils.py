@@ -1,7 +1,7 @@
 import time
 from typing import Dict, Union, Container
 
-from jose import jwt
+from joserfc import jwt
 
 from .exceptions import CognitoJWTException
 
