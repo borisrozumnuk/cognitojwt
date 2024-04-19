@@ -4,7 +4,7 @@ import tempfile
 import aiohttp
 import pytest
 import cognitojwt
-from jose.backends import RSAKey
+from joserfc import jwk
 
 from cognitojwt.constants import PUBLIC_KEYS_URL_TEMPLATE
 
@@ -69,7 +69,7 @@ async def test_get_public_key():
         AWS_COGNITO_REGION,
         AWS_COGNITO_USERPOOL_ID
     )
-    assert isinstance(pub_key, RSAKey)
+    assert isinstance(pub_key, jwt.RSAKey)
 
 
 @pytest.mark.asyncio
@@ -91,4 +91,4 @@ async def test_get_public_key_local_jwks():
             AWS_COGNITO_USERPOOL_ID
         )
         del os.environ['AWS_COGNITO_JWKS_PATH']
-    assert isinstance(pub_key, RSAKey)
+    assert isinstance(pub_key, jwt.RSAKey)

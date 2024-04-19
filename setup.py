@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 
 install_requires = [
-    'python-jose[cryptography]'
+    'joserfc'
 ]
 
 sync_require = [
@@ -22,9 +22,9 @@ test_require = {
     'requests',
     'aiohttp',
     'async_lru',
-    'pytest==5.4.0',
-    'pytest-asyncio==0.12.0',
-    'attrs==19.1.0'
+    'pytest',
+    'pytest-asyncio',
+    'attrs'
 }
 
 

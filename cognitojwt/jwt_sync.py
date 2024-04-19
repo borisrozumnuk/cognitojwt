@@ -6,7 +6,7 @@ import requests
 
 
 from jose import jwk
-from jose.utils import base64url_decode
+from jose.util import urlsafe_b64decode
 
 from .constants import PUBLIC_KEYS_URL_TEMPLATE
 from .exceptions import CognitoJWTException
@@ -48,7 +48,7 @@ def decode(
 ) -> Dict:
     message, encoded_signature = str(token).rsplit('.', 1)
 
-    decoded_signature = base64url_decode(encoded_signature.encode('utf-8'))
+    decoded_signature = urlsafe_b64decode(encoded_signature.encode('utf-8'))
 
     public_key = get_public_key(token, region, userpool_id)
 
