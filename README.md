@@ -1,5 +1,3 @@
-[![Build Status](https://travis-ci.org/borisrozumnuk/cognitojwt.svg?branch=master)](https://travis-ci.org/borisrozumnuk/cognitojwt)
-
 # Decode and verify [Amazon Cognito](https://aws.amazon.com/cognito/) JWT tokens
 
 ### Note: tested on Python >= 3.6, compatible with PEP-492 (async/await coroutines syntax)
