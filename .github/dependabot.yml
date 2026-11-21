@@ -9,3 +9,7 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    ignore:
+      # The [build-system] floor stays low on purpose: setuptools >= 76 doesn't
+      # install on Python 3.8 (and >= 84 not on 3.9), which are still supported.
+      - dependency-name: setuptools
