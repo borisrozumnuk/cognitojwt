@@ -78,12 +78,16 @@ class JWKSServer:
     def __init__(self, jwks):
         self.jwks = jwks
         self.status = 200
+        self.delay = 0.0
         self.requests = 0
+        self._lock = threading.Lock()
         server = self
 
         class Handler(BaseHTTPRequestHandler):
             def do_GET(self):
-                server.requests += 1
+                with server._lock:
+                    server.requests += 1
+                time.sleep(server.delay)
                 body = json.dumps(server.jwks).encode()
                 self.send_response(server.status)
                 self.send_header('Content-Type', 'application/json')

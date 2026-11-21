@@ -6,40 +6,47 @@ from joserfc.jwk import Key
 
 from . import constants
 from ._jwks import (
-    KEY_NOT_FOUND_MESSAGE, KeysCache, construct_key, find_key, get_keys_url, get_kid,
+    JWK, KEY_NOT_FOUND_MESSAGE, KeysCache, construct_key, find_key, get_keys_url, get_kid,
     is_url, parse_jwks, read_jwks_file,
 )
 from .exceptions import CognitoJWTException
-from .token_utils import Token, verify_claims, verify_signature
+from .token_utils import Claims, Token, verify_claims, verify_signature
 
 
 _keys_cache = KeysCache()
 # Downloads in progress, so concurrent requests share one download per URL.
-_in_flight: Dict[Tuple[asyncio.AbstractEventLoop, str], 'asyncio.Task[List[dict]]'] = {}
+_in_flight: Dict[Tuple[asyncio.AbstractEventLoop, str], 'asyncio.Task[List[JWK]]'] = {}
 
 
-async def _fetch_keys_async(keys_url: str) -> List[dict]:
+async def _fetch_keys_async(keys_url: str) -> List[JWK]:
     if not is_url(keys_url):
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, read_jwks_file, keys_url)
     timeout = aiohttp.ClientTimeout(total=constants.HTTP_TIMEOUT)
     try:
-        async with aiohttp.ClientSession(timeout=timeout) as session:
-            async with session.get(keys_url) as response:
-                response.raise_for_status()
-                body = await response.read()
+        async with aiohttp.ClientSession(timeout=timeout) as session, session.get(keys_url) as response:
+            response.raise_for_status()
+            body = await response.read()
     except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
         raise CognitoJWTException(f'Unable to download JWKS from {keys_url}: {exc!r}') from exc
     return parse_jwks(body)
 
 
-async def _fetch_and_store(keys_url: str) -> List[dict]:
+async def _fetch_and_store(keys_url: str) -> List[JWK]:
     keys = await _fetch_keys_async(keys_url)
     _keys_cache.set(keys_url, keys)
     return keys
 
 
-async def get_keys_async(keys_url: str, force_refresh: bool = False) -> List[dict]:
+def _download_done(in_flight_key: Tuple[asyncio.AbstractEventLoop, str], task: 'asyncio.Task[List[JWK]]') -> None:
+    _in_flight.pop(in_flight_key, None)
+    if not task.cancelled():
+        # Mark the error as retrieved: if every waiting caller was cancelled, nobody
+        # else reads it and asyncio logs "Task exception was never retrieved".
+        task.exception()
+
+
+async def get_keys_async(keys_url: str, force_refresh: bool = False) -> List[JWK]:
     """Return the keys of the JWKS at ``keys_url`` (URL or file path), cached per URL."""
     if not force_refresh:
         keys = _keys_cache.get(keys_url)
@@ -52,7 +59,7 @@ async def get_keys_async(keys_url: str, force_refresh: bool = False) -> List[dic
     if task is None:
         task = loop.create_task(_fetch_and_store(keys_url))
         _in_flight[in_flight_key] = task
-        task.add_done_callback(lambda _: _in_flight.pop(in_flight_key, None))
+        task.add_done_callback(lambda done: _download_done(in_flight_key, done))
     # Shield, so a cancelled caller doesn't cancel the download shared with others.
     return await asyncio.shield(task)
 
@@ -83,7 +90,7 @@ async def decode_async(
         userpool_id: str,
         app_client_id: Optional[Union[str, Container[str]]] = None,
         testmode: bool = False
-) -> Dict:
+) -> Claims:
     keys_url, custom_keys = get_keys_url(region, userpool_id)
     public_key = await _get_public_key_async(token, keys_url)
     claims = verify_signature(token, public_key)

@@ -15,3 +15,7 @@ HTTP_TIMEOUT = 10
 # "kid" (key rotation). Protects against forcing a download per request with
 # forged tokens.
 KEYS_REFRESH_INTERVAL = 60
+
+# Tokens longer than this (bytes) are rejected before they are parsed. It is
+# above the largest token joserfc itself accepts, so no valid token is affected.
+MAX_TOKEN_SIZE = 128 * 1024

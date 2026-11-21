@@ -1,21 +1,44 @@
-from typing import Container, Dict, List, Optional, Union
+import threading
+import weakref
+from typing import Container, List, Optional, Union
 
 import requests
 from joserfc.jwk import Key
 
 from . import constants
 from ._jwks import (
-    KEY_NOT_FOUND_MESSAGE, KeysCache, construct_key, find_key, get_keys_url, get_kid,
+    JWK, KEY_NOT_FOUND_MESSAGE, KeysCache, construct_key, find_key, get_keys_url, get_kid,
     is_url, parse_jwks, read_jwks_file,
 )
 from .exceptions import CognitoJWTException
-from .token_utils import Token, verify_claims, verify_signature
+from .token_utils import Claims, Token, verify_claims, verify_signature
 
 
 _keys_cache = KeysCache()
 
 
-def _fetch_keys(keys_url: str) -> List[dict]:
+class _DownloadLock:
+    __slots__ = ('__weakref__', 'lock')
+
+    def __init__(self) -> None:
+        self.lock = threading.Lock()
+
+
+# One lock per URL, so concurrent threads share one download. Entries go away
+# once no thread holds them.
+_download_locks: 'weakref.WeakValueDictionary[str, _DownloadLock]' = weakref.WeakValueDictionary()
+_download_locks_guard = threading.Lock()
+
+
+def _download_lock(keys_url: str) -> _DownloadLock:
+    with _download_locks_guard:
+        lock = _download_locks.get(keys_url)
+        if lock is None:
+            lock = _download_locks[keys_url] = _DownloadLock()
+        return lock
+
+
+def _fetch_keys(keys_url: str) -> List[JWK]:
     if not is_url(keys_url):
         return read_jwks_file(keys_url)
     try:
@@ -26,15 +49,23 @@ def _fetch_keys(keys_url: str) -> List[dict]:
     return parse_jwks(response.content)
 
 
-def get_keys(keys_url: str, force_refresh: bool = False) -> List[dict]:
+def get_keys(keys_url: str, force_refresh: bool = False) -> List[JWK]:
     """Return the keys of the JWKS at ``keys_url`` (URL or file path), cached per URL."""
+    version = _keys_cache.version(keys_url)
     if not force_refresh:
         keys = _keys_cache.get(keys_url)
         if keys is not None:
             return keys
-    keys = _fetch_keys(keys_url)
-    _keys_cache.set(keys_url, keys)
-    return keys
+    download_lock = _download_lock(keys_url)
+    with download_lock.lock:
+        if _keys_cache.version(keys_url) != version:
+            # Another thread downloaded the JWKS while this one was waiting.
+            cached = _keys_cache.get(keys_url)
+            if cached is not None:
+                return cached
+        keys = _fetch_keys(keys_url)
+        _keys_cache.set(keys_url, keys)
+        return keys
 
 
 # Backward compatibility: ``get_keys`` used to be wrapped with ``functools.lru_cache``.
@@ -63,7 +94,7 @@ def decode(
         userpool_id: str,
         app_client_id: Optional[Union[str, Container[str]]] = None,
         testmode: bool = False
-) -> Dict:
+) -> Claims:
     keys_url, custom_keys = get_keys_url(region, userpool_id)
     public_key = _get_public_key(token, keys_url)
     claims = verify_signature(token, public_key)

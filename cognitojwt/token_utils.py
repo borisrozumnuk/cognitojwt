@@ -1,16 +1,19 @@
 import json
 import time
+import warnings
 from typing import Any, Container, Dict, Optional, Union
 
 from joserfc import jws
 from joserfc.errors import BadSignatureError, JoseError
 from joserfc.jwk import Key
 
+from . import constants
 from .constants import ALLOWED_ALGORITHMS, ISSUER_TEMPLATE
 from .exceptions import CognitoJWTException
 
 
 Token = Union[str, bytes]
+Claims = Dict[str, Any]
 
 CLIENT_ID_KEYS: Dict[str, str] = {
     'access': 'client_id',
@@ -20,14 +23,19 @@ CLIENT_ID_KEYS: Dict[str, str] = {
 
 def _to_bytes(token: Token) -> bytes:
     if isinstance(token, bytes):
-        return token
-    try:
-        return str(token).encode('ascii')
-    except UnicodeEncodeError as exc:
-        raise CognitoJWTException('Invalid token: non-ASCII characters') from exc
+        data = token
+    else:
+        try:
+            data = str(token).encode('ascii')
+        except UnicodeEncodeError as exc:
+            raise CognitoJWTException('Invalid token: non-ASCII characters') from exc
+    # Checked before parsing, so oversized input is never split or decoded.
+    if len(data) > constants.MAX_TOKEN_SIZE:
+        raise CognitoJWTException('Invalid token: too large')
+    return data
 
 
-def _parse_claims(payload: bytes) -> Dict[str, Any]:
+def _parse_claims(payload: bytes) -> Claims:
     try:
         claims = json.loads(payload)
     except ValueError as exc:
@@ -45,15 +53,15 @@ def _extract(token: Token) -> jws.CompactSignature:
         raise CognitoJWTException(f'Invalid token: {exc}') from exc
 
 
-def get_unverified_headers(token: Token) -> dict:
+def get_unverified_headers(token: Token) -> Dict[str, Any]:
     return dict(_extract(token).headers())
 
 
-def get_unverified_claims(token: Token) -> dict:
+def get_unverified_claims(token: Token) -> Claims:
     return _parse_claims(_extract(token).payload)
 
 
-def verify_signature(token: Token, public_key: Key) -> Dict[str, Any]:
+def verify_signature(token: Token, public_key: Key) -> Claims:
     """Verify the token signature with ``public_key`` and return its claims."""
     try:
         signature = jws.deserialize_compact(
@@ -71,16 +79,17 @@ def check_expired(exp: Optional[Union[int, float]], testmode: bool = False) -> N
         return
     if isinstance(exp, bool) or not isinstance(exp, (int, float)):
         raise CognitoJWTException('Invalid or missing "exp" claim')
-    if time.time() > exp:
+    # RFC 7519: the token must not be accepted on or after "exp".
+    if time.time() >= exp:
         raise CognitoJWTException('Token is expired')
 
 
-def check_issuer(claims: Dict, region: str, userpool_id: str) -> None:
+def check_issuer(claims: Claims, region: str, userpool_id: str) -> None:
     if claims.get('iss') != ISSUER_TEMPLATE.format(region, userpool_id):
         raise CognitoJWTException('Token was not issued by this user pool')
 
 
-def check_client_id(claims: Dict, app_client_id: Union[str, Container[str]]) -> None:
+def check_client_id(claims: Claims, app_client_id: Union[str, Container[str]]) -> None:
     token_use = claims.get('token_use')
 
     client_id_key = CLIENT_ID_KEYS.get(token_use) if isinstance(token_use, str) else None
@@ -98,7 +107,7 @@ def check_client_id(claims: Dict, app_client_id: Union[str, Container[str]]) -> 
 
 
 def verify_claims(
-        claims: Dict,
+        claims: Claims,
         region: str,
         userpool_id: str,
         app_client_id: Optional[Union[str, Container[str]]] = None,
@@ -112,14 +121,21 @@ def verify_claims(
 
     if app_client_id:
         check_client_id(claims, app_client_id)
+    elif app_client_id is not None:
+        # Usually an unset setting (e.g. an empty environment variable).
+        warnings.warn(
+            f'app_client_id is empty ({app_client_id!r}), so the token audience is not verified; '
+            'pass None to skip the check on purpose',
+            stacklevel=3,
+        )
 
 
 __all__ = [
-    'get_unverified_headers',
-    'get_unverified_claims',
-    'verify_signature',
+    'check_client_id',
     'check_expired',
     'check_issuer',
-    'check_client_id',
+    'get_unverified_claims',
+    'get_unverified_headers',
     'verify_claims',
+    'verify_signature',
 ]
