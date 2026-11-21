@@ -39,6 +39,7 @@ setup(
     long_description_content_type='text/markdown',
     url='https://github.com/borisrozumnuk/cognitojwt',
     project_urls={
+        'Documentation': 'https://borisrozumnuk.github.io/cognitojwt/',
         'Changelog': 'https://github.com/borisrozumnuk/cognitojwt/blob/master/CHANGELOG.md',
         'Issues': 'https://github.com/borisrozumnuk/cognitojwt/issues',
     },

@@ -2,6 +2,8 @@
 
 ### Note: requires Python >= 3.8, compatible with PEP-492 (async/await coroutines syntax)
 
+Documentation: https://borisrozumnuk.github.io/cognitojwt/ (also as [llms.txt](https://borisrozumnuk.github.io/cognitojwt/llms.txt) for LLMs)
+
 ### Installation
 
 Package works in two modes: synchronous - [requests](https://github.com/psf/requests) as http-client and asynchronous - [aiohttp](https://github.com/aio-libs/aiohttp) as http-client.

@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cognitojwt — verify Amazon Cognito JWTs in Python</title>
+<meta name="description" content="Python library to decode and verify Amazon Cognito ID and access tokens: RS256 signature, exp, iat, iss, token_use and audience. Sync and async APIs.">
+<meta property="og:title" content="cognitojwt">
+<meta property="og:description" content="Decode and verify Amazon Cognito JWTs in Python. Sync and async.">
+<meta property="og:type" content="website">
+<link rel="alternate" type="text/markdown" title="llms.txt" href="llms.txt">
+<link rel="alternate" type="text/markdown" title="Full reference for LLMs" href="llms-full.txt">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f766e'/%3E%3Cpath d='M16 6l8 3v6c0 5-3.4 9.3-8 11-4.6-1.7-8-6-8-11V9z' fill='none' stroke='white' stroke-width='2.4' stroke-linejoin='round'/%3E%3Cpath d='M12.5 16l2.5 2.5 5-5' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+:root {
+  --bg: #fbfbfa;
+  --surface: #ffffff;
+  --surface-2: #f3f4f2;
+  --text: #1c1f1e;
+  --muted: #5b625f;
+  --border: #e3e5e2;
+  --accent: #0f766e;
+  --accent-soft: #e5f3f1;
+  --code-bg: #f4f5f3;
+  --code-text: #1c1f1e;
+  --tok-kw: #9b2c6f;
+  --tok-str: #0f6b3a;
+  --tok-com: #7b817e;
+  --tok-num: #a35200;
+  --tok-fn: #1d4ed8;
+  --warn-bg: #fdf6e7;
+  --warn-border: #ecd9a8;
+  --shadow: 0 1px 2px rgba(20, 30, 25, .05), 0 4px 16px rgba(20, 30, 25, .04);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111413;
+    --surface: #171b1a;
+    --surface-2: #1d2221;
+    --text: #e6e9e7;
+    --muted: #9aa39f;
+    --border: #2a302e;
+    --accent: #3fc1b0;
+    --accent-soft: #15302c;
+    --code-bg: #151918;
+    --code-text: #e1e5e3;
+    --tok-kw: #f08cc0;
+    --tok-str: #8fd5a6;
+    --tok-com: #7d8783;
+    --tok-num: #f0b072;
+    --tok-fn: #8ab4ff;
+    --warn-bg: #2a2416;
+    --warn-border: #4a3f22;
+    --shadow: none;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111413;
+  --surface: #171b1a;
+  --surface-2: #1d2221;
+  --text: #e6e9e7;
+  --muted: #9aa39f;
+  --border: #2a302e;
+  --accent: #3fc1b0;
+  --accent-soft: #15302c;
+  --code-bg: #151918;
+  --code-text: #e1e5e3;
+  --tok-kw: #f08cc0;
+  --tok-str: #8fd5a6;
+  --tok-com: #7d8783;
+  --tok-num: #f0b072;
+  --tok-fn: #8ab4ff;
+  --warn-bg: #2a2416;
+  --warn-border: #4a3f22;
+  --shadow: none;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; text-underline-offset: 3px; }
+code, pre, kbd { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; }
+:not(pre) > code {
+  font-size: .88em;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: .08em .35em;
+  overflow-wrap: anywhere;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  gap: 56px;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+nav.toc {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  max-height: 100vh;
+  overflow-y: auto;
+  padding: 40px 0 32px;
+  font-size: 14.5px;
+}
+.brand {
+  display: flex; align-items: center; gap: 10px;
+  font-weight: 650; font-size: 17px; color: var(--text);
+  margin-bottom: 28px;
+}
+.brand:hover { text-decoration: none; }
+.brand svg { flex: none; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; }
+nav.toc li a {
+  display: block;
+  padding: 5px 10px;
+  margin-left: -10px;
+  border-radius: 6px;
+  color: var(--muted);
+}
+nav.toc li a:hover { color: var(--text); background: var(--surface-2); text-decoration: none; }
+nav.toc li a.active { color: var(--accent); background: var(--accent-soft); font-weight: 550; }
+.toc-foot { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); display: grid; gap: 6px; }
+.toc-foot a { color: var(--muted); font-size: 14px; }
+
+main { padding: 40px 0 96px; min-width: 0; }
+.hero { padding: 24px 0 8px; }
+.eyebrow {
+  display: inline-flex; gap: 8px; flex-wrap: wrap;
+  margin: 0 0 18px; padding: 0; list-style: none;
+}
+.eyebrow li {
+  font-size: 12.5px; font-weight: 550; letter-spacing: .01em;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+h1 {
+  font-size: clamp(32px, 5vw, 46px);
+  line-height: 1.12;
+  letter-spacing: -.025em;
+  margin: 0 0 16px;
+  font-weight: 700;
+}
+.lead { font-size: 19px; color: var(--muted); max-width: 640px; margin: 0 0 28px; }
+.install {
+  display: flex; align-items: center; gap: 12px;
+  max-width: 520px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 10px 10px 16px;
+  box-shadow: var(--shadow);
+}
+.install code { flex: 1; font-size: 15px; background: none; border: 0; padding: 0; overflow-x: auto; white-space: nowrap; }
+.install code::before { content: "$ "; color: var(--muted); }
+
+h2 {
+  font-size: 26px; letter-spacing: -.015em; line-height: 1.25;
+  margin: 72px 0 16px; padding-top: 8px;
+}
+h3 { font-size: 18px; margin: 32px 0 10px; }
+p { margin: 0 0 16px; }
+ul, ol { padding-left: 22px; margin: 0 0 16px; }
+li { margin: 4px 0; }
+li::marker { color: var(--muted); }
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 48px 0 0;
+}
+.feature {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 18px 16px;
+  box-shadow: var(--shadow);
+}
+.feature strong { display: block; margin-bottom: 4px; font-size: 15.5px; }
+.feature span { color: var(--muted); font-size: 14.5px; line-height: 1.55; }
+
+.code {
+  position: relative;
+  margin: 0 0 20px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--code-bg);
+}
+.code .label {
+  font-size: 12px; font-weight: 600; letter-spacing: .02em;
+  color: var(--muted);
+  padding: 8px 16px 0;
+}
+pre {
+  margin: 0;
+  padding: 14px 16px 16px;
+  overflow-x: auto;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--code-text);
+  tab-size: 4;
+}
+.copy {
+  position: absolute; top: 8px; right: 8px;
+  font: 500 12.5px/1 inherit;
+  font-family: inherit;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 9px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .15s;
+}
+.code:hover .copy, .copy:focus-visible, .install .copy { opacity: 1; }
+.install .copy { position: static; }
+.copy:hover { color: var(--text); }
+.tok-kw { color: var(--tok-kw); }
+.tok-str { color: var(--tok-str); }
+.tok-com { color: var(--tok-com); font-style: italic; }
+.tok-num { color: var(--tok-num); }
+.tok-fn { color: var(--tok-fn); }
+
+.table-wrap { overflow-x: auto; margin: 0 0 20px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { font-size: 13px; font-weight: 600; color: var(--muted); background: var(--surface-2); }
+tr:last-child td { border-bottom: 0; }
+td code { white-space: nowrap; }
+.status { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+
+ol.steps { counter-reset: step; list-style: none; padding: 0; }
+ol.steps li {
+  counter-increment: step;
+  position: relative;
+  padding: 2px 0 10px 40px;
+  margin: 0;
+}
+ol.steps li::before {
+  content: counter(step);
+  position: absolute; left: 0; top: 2px;
+  width: 26px; height: 26px;
+  display: grid; place-items: center;
+  font-size: 13px; font-weight: 650;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: 50%;
+}
+
+.note {
+  border: 1px solid var(--warn-border);
+  background: var(--warn-bg);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin: 0 0 20px;
+}
+.note ul { margin: 0; }
+
+.llm {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+.llm a {
+  display: block;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+.llm a:hover { border-color: var(--accent); text-decoration: none; }
+.llm code { color: var(--accent); background: none; border: 0; padding: 0; font-size: 15px; font-weight: 600; }
+.llm span { display: block; color: var(--muted); font-size: 14.5px; margin-top: 4px; }
+
+footer {
+  margin-top: 80px; padding-top: 24px;
+  border-top: 1px solid var(--border);
+  color: var(--muted); font-size: 14px;
+  display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between;
+}
+footer nav { display: flex; gap: 18px; flex-wrap: wrap; }
+
+@media (max-width: 860px) {
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0 16px; }
+  nav.toc { position: static; max-height: none; padding: 20px 0 0; }
+  nav.toc ol, .toc-foot { display: none; }
+  .brand { margin-bottom: 0; }
+  main { padding-top: 8px; }
+  h2 { margin-top: 56px; }
+  .lead { font-size: 17px; }
+  .copy { opacity: 1; }
+}
+@media (max-width: 560px) {
+  .features { grid-template-columns: minmax(0, 1fr); }
+  .install code { font-size: 13.5px; scrollbar-width: none; }
+  .install code::before { content: none; }
+  .install code::-webkit-scrollbar { display: none; }
+  /* Tables become one card per row. */
+  .stack thead { display: none; }
+  .stack tr { display: block; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  .stack tr:last-child { border-bottom: 0; }
+  .stack td { display: block; padding: 2px 0; border: 0; }
+  .stack td:first-child { margin-bottom: 4px; }
+  .stack td.status { margin-top: 4px; color: var(--muted); font-weight: 500; }
+  .stack td.status::before { content: "HTTP "; }
+}
+</style>
+</head>
+<body>
+<div class="layout">
+  <nav class="toc" aria-label="Contents">
+    <a class="brand" href="#top">
+      <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="var(--accent)"/><path d="M16 6l8 3v6c0 5-3.4 9.3-8 11-4.6-1.7-8-6-8-11V9z" fill="none" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"/><path d="M12.5 16l2.5 2.5 5-5" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      cognitojwt
+    </a>
+    <ol>
+      <li><a href="#install">Installation</a></li>
+      <li><a href="#quick-start">Quick start</a></li>
+      <li><a href="#verifier">Verifier</a></li>
+      <li><a href="#errors">Errors</a></li>
+      <li><a href="#verified">What is verified</a></li>
+      <li><a href="#cache">JWKS cache</a></li>
+      <li><a href="#custom-jwks">Custom JWKS</a></li>
+      <li><a href="#security">Security notes</a></li>
+      <li><a href="#examples">Examples</a></li>
+      <li><a href="#llms">For LLMs</a></li>
+    </ol>
+    <div class="toc-foot">
+      <a href="https://github.com/borisrozumnuk/cognitojwt">GitHub</a>
+      <a href="https://pypi.org/project/cognitojwt/">PyPI</a>
+      <a href="https://github.com/borisrozumnuk/cognitojwt/blob/master/CHANGELOG.md">Changelog</a>
+    </div>
+  </nav>
+
+  <main id="top">
+    <section class="hero">
+      <ul class="eyebrow">
+        <li>v1.7.0</li>
+        <li>Python 3.8 – 3.14</li>
+        <li>MIT</li>
+      </ul>
+      <h1>Verify Amazon Cognito JWTs in Python</h1>
+      <p class="lead">Check the signature and claims of Cognito ID and access tokens, with a sync API on <code>requests</code> and an async one on <code>aiohttp</code>. One required dependency.</p>
+      <div class="install">
+        <code id="install-cmd">pip install "cognitojwt[sync]"</code>
+        <button class="copy" type="button" data-copy="#install-cmd">Copy</button>
+      </div>
+      <div class="features">
+        <div class="feature"><strong>Complete checks</strong><span>RS256 signature, <code>exp</code>, <code>iat</code>, <code>iss</code>, <code>token_use</code>, <code>aud</code> / <code>client_id</code>.</span></div>
+        <div class="feature"><strong>Key rotation handled</strong><span>Cached JWKS, refreshed on unknown keys and every 6 hours, stale-if-error.</span></div>
+        <div class="feature"><strong>Clear errors</strong><span>Typed exceptions separate an invalid token (401) from unavailable keys (503).</span></div>
+        <div class="feature"><strong>Sync and async</strong><span>Same API for both; concurrent calls share one JWKS download.</span></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="install">Installation</h2>
+      <p>The HTTP client is an optional extra, so only what you use gets installed:</p>
+      <div class="code"><pre data-lang="sh">pip install "cognitojwt[sync]"     # cognitojwt.decode (requests)
+pip install "cognitojwt[async]"    # cognitojwt.decode_async (aiohttp)
+pip install "cognitojwt[sync,async]"</pre></div>
+    </section>
+
+    <section>
+      <h2 id="quick-start">Quick start</h2>
+      <div class="code"><pre data-lang="py">import cognitojwt
+
+REGION = 'eu-west-1'
+USERPOOL_ID = 'eu-west-1_AbC123dEf'
+APP_CLIENT_ID = '1example23456789'
+
+# Sync
+claims: dict = cognitojwt.decode(token, REGION, USERPOOL_ID, app_client_id=APP_CLIENT_ID)
+
+# Async
+claims: dict = await cognitojwt.decode_async(token, REGION, USERPOOL_ID, app_client_id=APP_CLIENT_ID)</pre></div>
+      <p>The result is a <code>dict</code> with the token claims. Any failure raises a subclass of <code>cognitojwt.CognitoJWTException</code>.</p>
+      <h3>Optional arguments</h3>
+      <div class="table-wrap"><table class="stack">
+        <thead><tr><th>Argument</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>app_client_id</code></td><td>The app client id, or a list / tuple of ids. Checked against <code>aud</code> (ID token) or <code>client_id</code> (access token).</td></tr>
+          <tr><td><code>token_use</code></td><td><code>'id'</code>, <code>'access'</code>, or both as a tuple: accept only that kind of token.</td></tr>
+          <tr><td><code>leeway</code></td><td>Seconds of tolerated clock skew for <code>exp</code> and <code>iat</code>.</td></tr>
+          <tr><td><code>testmode</code></td><td>Skip the <code>exp</code> and <code>iat</code> checks. Tests only.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section>
+      <h2 id="verifier">Verifier</h2>
+      <p><code>CognitoJWTVerifier</code> keeps the configuration of one user pool and its own key cache. Create it once, at start-up, and reuse it.</p>
+      <div class="code"><pre data-lang="py">verifier = cognitojwt.CognitoJWTVerifier(
+    REGION,
+    USERPOOL_ID,
+    APP_CLIENT_ID,
+    token_use='access',   # optional
+    leeway=30,            # optional
+    jwks_url=None,        # optional: URL or file path, e.g. of a local emulator
+    issuer=None,          # optional: expected "iss" when jwks_url is set
+    timeout=None,         # optional: JWKS download timeout, seconds (default 10)
+)
+
+claims = verifier.verify(token)               # needs the "sync" extra
+claims = await verifier.verify_async(token)   # needs the "async" extra</pre></div>
+      <p>Each verifier can point to its own JWKS, so several user pools work side by side in one process.</p>
+    </section>
+
+    <section>
+      <h2 id="errors">Errors</h2>
+      <p>Every exception is a subclass of <code>CognitoJWTException</code>, so catching the base class still catches everything.</p>
+      <div class="table-wrap"><table class="stack">
+        <thead><tr><th>Exception</th><th>Raised when</th><th>Answer</th></tr></thead>
+        <tbody>
+          <tr><td><code>MalformedTokenError</code></td><td>Not a JWT, too large (over 128 KiB), invalid JSON, no <code>kid</code></td><td class="status">401</td></tr>
+          <tr><td><code>InvalidSignatureError</code></td><td>Signature mismatch, algorithm other than RS256, key not in the JWKS</td><td class="status">401</td></tr>
+          <tr><td><code>TokenExpiredError</code></td><td><code>exp</code> has passed</td><td class="status">401</td></tr>
+          <tr><td><code>InvalidClaimError</code></td><td>Wrong or missing <code>exp</code>, <code>iat</code>, <code>iss</code>, <code>token_use</code>, <code>aud</code> / <code>client_id</code></td><td class="status">401</td></tr>
+          <tr><td><code>InvalidUserPoolError</code></td><td><code>region</code> or <code>userpool_id</code> is not a valid AWS value</td><td class="status">401 / 500</td></tr>
+          <tr><td><code>JWKSError</code></td><td>The JWKS can't be downloaded, read or parsed</td><td class="status">503</td></tr>
+        </tbody>
+      </table></div>
+      <div class="code"><pre data-lang="py">try:
+    claims = verifier.verify(token)
+except cognitojwt.JWKSError:
+    ...  # keys unavailable: 503, retry later
+except cognitojwt.CognitoJWTException:
+    ...  # invalid token: 401</pre></div>
+      <p>Catch <code>JWKSError</code> before <code>CognitoJWTException</code>, otherwise its branch never runs.</p>
+    </section>
+
+    <section>
+      <h2 id="verified">What is verified</h2>
+      <ol class="steps">
+        <li>The token is parsed and its <code>kid</code> header is read.</li>
+        <li>The key with that <code>kid</code> is taken from the user pool JWKS, <code>https://cognito-idp.&lt;region&gt;.amazonaws.com/&lt;userpool_id&gt;/.well-known/jwks.json</code>.</li>
+        <li>The RS256 signature is verified. No other algorithm is accepted.</li>
+        <li><code>exp</code> must be in the future (minus <code>leeway</code>).</li>
+        <li><code>iat</code>, if present, must not be more than 5 minutes (plus <code>leeway</code>) in the future.</li>
+        <li><code>iss</code> must be the user pool.</li>
+        <li><code>token_use</code> must match, when passed.</li>
+        <li><code>aud</code> or <code>client_id</code> must match <code>app_client_id</code>, when passed.</li>
+      </ol>
+      <p>Not verified: <code>scope</code>, <code>cognito:groups</code> and token revocation. Check scopes and groups in your code after verification.</p>
+    </section>
+
+    <section>
+      <h2 id="cache">JWKS cache</h2>
+      <ul>
+        <li>The JWKS is downloaded once per user pool and cached in memory. Concurrent calls, threads or coroutines, share one download.</li>
+        <li>A token signed with an unknown key (key rotation) triggers a new download, at most once a minute.</li>
+        <li>The JWKS is downloaded again after 6 hours, so keys removed from the pool stop being trusted.</li>
+        <li>If that download fails, the cached keys are still used, a warning goes to the <code>cognitojwt</code> logger, and the download is retried a minute later.</li>
+        <li>A 4xx answer, e.g. for a pool that doesn't exist, is remembered for a minute.</li>
+        <li>Up to 256 pools are cached; the least recently used is dropped first.</li>
+      </ul>
+      <div class="code"><pre data-lang="py">from cognitojwt import jwt_sync
+
+jwt_sync.get_keys.cache_info()    # CacheInfo(hits=..., misses=..., maxsize=256, currsize=...)
+jwt_sync.get_keys.cache_clear()</pre></div>
+      <p>The limits live in <code>cognitojwt.constants</code> and can be changed at runtime.</p>
+    </section>
+
+    <section>
+      <h2 id="custom-jwks">Custom JWKS</h2>
+      <p>In a VPC without internet access, or with a local Cognito emulator, set <code>AWS_COGNITO_JWKS_PATH</code> to a <code>jwks.json</code> file path or URL. Then <code>region</code> and <code>userpool_id</code> are not validated and <code>iss</code> is not checked. A plain <code>http://</code> URL other than localhost emits a warning.</p>
+      <p>To set a JWKS for one pool only, pass <code>jwks_url</code>, and optionally <code>issuer</code>, to <code>CognitoJWTVerifier</code>.</p>
+    </section>
+
+    <section>
+      <h2 id="security">Security notes</h2>
+      <div class="note">
+        <ul>
+          <li>Always pass <code>app_client_id</code>. Without it, a token issued for any app client of the pool is accepted.</li>
+          <li>Never take the region or user pool id from the token you are verifying. With several pools, look them up in your own list.</li>
+          <li>Pass <code>token_use</code> when an endpoint expects only access or only ID tokens.</li>
+          <li>Never use <code>testmode=True</code> in production.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="examples">Examples</h2>
+      <h3>FastAPI dependency</h3>
+      <div class="code"><pre data-lang="py">import cognitojwt
+from fastapi import Depends, FastAPI, HTTPException, Request
+
+verifier = cognitojwt.CognitoJWTVerifier(REGION, USERPOOL_ID, APP_CLIENT_ID, token_use='access')
+app = FastAPI()
+
+
+async def current_user(request: Request) -&gt; dict:
+    scheme, _, token = request.headers.get('Authorization', '').partition(' ')
+    if scheme.lower() != 'bearer' or not token:
+        raise HTTPException(401, 'Missing bearer token')
+    try:
+        return await verifier.verify_async(token)
+    except cognitojwt.JWKSError:
+        raise HTTPException(503, 'Authentication is temporarily unavailable')
+    except cognitojwt.CognitoJWTException:
+        raise HTTPException(401, 'Invalid token')
+
+
+@app.get('/me')
+async def me(user: dict = Depends(current_user)) -&gt; dict:
+    return {'sub': user['sub']}</pre></div>
+      <h3>Several user pools</h3>
+      <div class="code"><pre data-lang="py">VERIFIERS = {
+    'tenant-a': cognitojwt.CognitoJWTVerifier('eu-west-1', 'eu-west-1_AAAAAAAAA', 'client-a'),
+    'tenant-b': cognitojwt.CognitoJWTVerifier('us-east-1', 'us-east-1_BBBBBBBBB', 'client-b'),
+}
+
+def verify_for_tenant(tenant: str, token: str) -&gt; dict:
+    verifier = VERIFIERS.get(tenant)
+    if verifier is None:
+        raise PermissionError('Unknown tenant')
+    return verifier.verify(token)</pre></div>
+      <h3>Scopes and groups</h3>
+      <div class="code"><pre data-lang="py">claims = verifier.verify(token)
+if 'orders/read' not in claims.get('scope', '').split():
+    raise PermissionError('Missing scope')
+if 'admin' not in claims.get('cognito:groups', []):
+    raise PermissionError('Not an admin')</pre></div>
+    </section>
+
+    <section>
+      <h2 id="llms">For LLMs</h2>
+      <p>Machine-readable docs following the <a href="https://llmstxt.org/">llms.txt</a> convention:</p>
+      <div class="llm">
+        <a href="llms.txt"><code>llms.txt</code><span>Summary, key rules and links to the docs and source.</span></a>
+        <a href="llms-full.txt"><code>llms-full.txt</code><span>The whole reference in one Markdown file: API, errors, cache, examples, common mistakes.</span></a>
+      </div>
+    </section>
+
+    <footer>
+      <span>cognitojwt · MIT license</span>
+      <nav>
+        <a href="https://github.com/borisrozumnuk/cognitojwt">GitHub</a>
+        <a href="https://pypi.org/project/cognitojwt/">PyPI</a>
+        <a href="https://github.com/borisrozumnuk/cognitojwt/blob/master/CHANGELOG.md">Changelog</a>
+        <a href="https://github.com/borisrozumnuk/cognitojwt/issues">Issues</a>
+      </nav>
+    </footer>
+  </main>
+</div>
+
+<script>
+(function () {
+  // Minimal Python / shell highlighting: comments, strings, keywords, numbers, calls.
+  var KW = /^(import|from|as|def|async|await|return|if|not|or|and|in|is|None|True|False|try|except|raise|for|while|with|class|lambda|pass|else|elif)$/;
+  function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function highlight(src) {
+    var re = /(#[^\n]*)|('(?:\\.|[^'\\\n])*'|"(?:\\.|[^"\\\n])*")|\b(\d[\d_]*(?:\.\d+)?)\b|([A-Za-z_][A-Za-z0-9_]*)(?=\s*\()|([A-Za-z_][A-Za-z0-9_]*)/g;
+    var out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      var t = esc(m[0]);
+      if (m[1]) out += '<span class="tok-com">' + t + '</span>';
+      else if (m[2]) out += '<span class="tok-str">' + t + '</span>';
+      else if (m[3]) out += '<span class="tok-num">' + t + '</span>';
+      else if (m[4]) out += KW.test(m[4]) ? '<span class="tok-kw">' + t + '</span>' : '<span class="tok-fn">' + t + '</span>';
+      else out += KW.test(m[5]) ? '<span class="tok-kw">' + t + '</span>' : t;
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+
+  document.querySelectorAll('pre[data-lang]').forEach(function (pre) {
+    var text = pre.textContent;
+    pre.innerHTML = highlight(text);
+    var btn = document.createElement('button');
+    btn.className = 'copy';
+    btn.type = 'button';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', function () { copy(text, btn); });
+    pre.parentNode.appendChild(btn);
+  });
+
+  document.querySelectorAll('button[data-copy]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      copy(document.querySelector(btn.getAttribute('data-copy')).textContent, btn);
+    });
+  });
+
+  function copy(text, btn) {
+    var done = function () {
+      btn.textContent = 'Copied';
+      setTimeout(function () { btn.textContent = 'Copy'; }, 1400);
+    };
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(done, function () {});
+    }
+  }
+
+  // Highlight the section in view in the table of contents.
+  var links = Array.prototype.slice.call(document.querySelectorAll('nav.toc ol a'));
+  var targets = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+  var pending = false;
+  function updateActive() {
+    pending = false;
+    var current = -1;
+    targets.forEach(function (t, i) {
+      if (t && t.getBoundingClientRect().top <= 120) current = i;
+    });
+    // At the very bottom the last sections can't reach the top of the window.
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) {
+      current = targets.length - 1;
+    }
+    links.forEach(function (a, i) { a.classList.toggle('active', i === current); });
+  }
+  window.addEventListener('scroll', function () {
+    if (!pending) { pending = true; requestAnimationFrame(updateActive); }
+  }, { passive: true });
+  updateActive();
+})();
+</script>
+</body>
+</html>
