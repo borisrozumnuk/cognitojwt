@@ -1,7 +1,5 @@
 # Decode and verify [Amazon Cognito](https://aws.amazon.com/cognito/) JWT tokens
 
-# Repository is archived. You can utilize any stable JWT library that supports JWKS.
-
 ### Note: requires Python >= 3.8, compatible with PEP-492 (async/await coroutines syntax)
 
 ### Installation
