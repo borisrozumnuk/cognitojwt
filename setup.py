@@ -17,11 +17,11 @@ install_requires = [
 ]
 
 sync_require = [
-    'requests>=2.20',
+    'requests>=2.32.4',
 ]
 
 async_require = [
-    'aiohttp>=3.6',
+    'aiohttp>=3.9.4',
 ]
 
 test_require = sync_require + async_require + [

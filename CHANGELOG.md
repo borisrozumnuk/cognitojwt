@@ -1,5 +1,41 @@
 # Changelog
 
+## 1.6.1
+
+Security and robustness fixes. The public API is unchanged.
+
+### Security
+- `region` and `userpool_id` are now validated before the JWKS URL is built.
+  Before, a value such as `"evil.example#"` moved the download to another host, and
+  because the expected issuer is built from the same values, a token signed with the
+  attacker's key was accepted. This mattered for apps that take the region or pool id
+  from the (unverified) token itself. Values must look like `eu-west-1` and
+  `eu-west-1_AbC123` (the pool id must start with the region), otherwise
+  `CognitoJWTException` is raised. Not applied when `AWS_COGNITO_JWKS_PATH` is set,
+  so local emulators keep working.
+- Tokens larger than 128 KiB (`constants.MAX_TOKEN_SIZE`) are rejected before they are
+  parsed. This also protects the older `joserfc` versions that are the newest ones
+  available on Python 3.8 and 3.9 (GHSA-9pg5-8c7x-5hfx). The newest `joserfc` already
+  rejects such tokens, so no valid token is affected.
+- A token is rejected at its `exp` time itself, not one second later (RFC 7519).
+- An empty `app_client_id` (`''`, `[]`, `()`), usually an unset setting, silently
+  disabled the audience check. It still does, for compatibility, but now emits a
+  `UserWarning`; pass `None` to skip the check on purpose.
+- A custom JWKS URL with plain `http://` (other than localhost) emits a `UserWarning`.
+
+### Fixed
+- Concurrent `decode` calls from several threads with an empty cache downloaded the
+  JWKS once per thread; they now share one download per URL (as `decode_async` does).
+- When every `decode_async` call waiting for a failed JWKS download was cancelled,
+  asyncio logged "Task exception was never retrieved".
+- Type annotations are complete: `mypy --strict` passes on the package.
+
+### Changed
+- Minimal versions of the extras: `requests>=2.32.4` (GHSA-9wx4-h78v-vm56,
+  GHSA-9hjg-9r4m-mvj7) and `aiohttp>=3.9.4` (fixes for `ClientSession` CRLF injection
+  and older parser issues). Newer `aiohttp` releases fix many more, mostly
+  server-side, issues, so keep it up to date in your application.
+
 ## 1.6.0
 
 The public API (`decode`, `decode_async`, `CognitoJWTException`, `get_keys`,
