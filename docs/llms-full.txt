@@ -1,0 +1,333 @@
+# cognitojwt — full reference
+
+> Decode and verify Amazon Cognito JWTs (ID and access tokens) in Python: RS256 signature
+> against the user pool JWKS, `exp`, `iat`, `iss`, `token_use` and `aud` / `client_id`.
+> Sync API on `requests`, async API on `aiohttp`. Python >= 3.8, MIT license.
+
+Version: 1.7.0
+Source: https://github.com/borisrozumnuk/cognitojwt
+PyPI: https://pypi.org/project/cognitojwt/
+
+## Installation
+
+The HTTP client is an optional extra, so only what you use is installed:
+
+```bash
+pip install "cognitojwt[sync]"    # cognitojwt.decode, CognitoJWTVerifier.verify (requests)
+pip install "cognitojwt[async]"   # cognitojwt.decode_async, CognitoJWTVerifier.verify_async (aiohttp)
+pip install "cognitojwt[sync,async]"
+```
+
+The only required dependency is `joserfc`. `cognitojwt.decode` exists only when `requests`
+is installed, `cognitojwt.decode_async` only when `aiohttp` is installed.
+
+## Quick start
+
+```python
+import cognitojwt
+
+REGION = 'eu-west-1'
+USERPOOL_ID = 'eu-west-1_AbC123dEf'
+APP_CLIENT_ID = '1example23456789'
+
+# Sync
+claims: dict = cognitojwt.decode(token, REGION, USERPOOL_ID, app_client_id=APP_CLIENT_ID)
+
+# Async
+claims: dict = await cognitojwt.decode_async(token, REGION, USERPOOL_ID, app_client_id=APP_CLIENT_ID)
+
+# A verifier keeps the configuration and its own key cache
+verifier = cognitojwt.CognitoJWTVerifier(REGION, USERPOOL_ID, APP_CLIENT_ID, token_use='access')
+claims = verifier.verify(token)                # sync
+claims = await verifier.verify_async(token)    # async
+```
+
+The return value is a plain `dict` with the token claims (`sub`, `exp`, `token_use`,
+`cognito:groups`, `scope`, custom attributes, ...).
+
+## Public API
+
+### `cognitojwt.decode`
+
+```python
+decode(
+    token: str | bytes,
+    region: str,
+    userpool_id: str,
+    app_client_id: str | Container[str] | None = None,
+    testmode: bool = False,
+    *,
+    token_use: str | Container[str] | None = None,
+    leeway: float = 0,
+) -> dict
+```
+
+Verifies the token and returns its claims; raises a `CognitoJWTException` subclass otherwise.
+
+- `token`: the JWT as `str` or `bytes` (without the `Bearer ` prefix).
+- `region`: the user pool region, e.g. `'eu-west-1'`.
+- `userpool_id`: the user pool id, e.g. `'eu-west-1_AbC123dEf'`. It must start with the region.
+- `app_client_id`: the app client id, or a list / tuple / set of allowed ids. It is compared
+  with `aud` for ID tokens and with `client_id` for access tokens. `None` skips the check.
+  An empty value (`''`, `[]`, `()`) also skips it but emits a `UserWarning`, since it is
+  usually a missing setting.
+- `testmode`: `True` skips the `exp` and `iat` checks. For tests only, never in production.
+- `token_use`: `'id'`, `'access'`, or a tuple of both. Only tokens with that `token_use` are accepted.
+- `leeway`: seconds of tolerated clock skew for `exp` and `iat`. Must be >= 0 (`ValueError` otherwise).
+
+The first five parameters can be passed positionally; `token_use` and `leeway` are keyword-only.
+
+### `cognitojwt.decode_async`
+
+Same signature and behaviour as `decode`, but a coroutine: `await cognitojwt.decode_async(...)`.
+
+### `cognitojwt.CognitoJWTVerifier`
+
+```python
+CognitoJWTVerifier(
+    region: str,
+    userpool_id: str,
+    app_client_id: str | Container[str] | None = None,
+    *,
+    token_use: str | Container[str] | None = None,
+    leeway: float = 0,
+    jwks_url: str | None = None,
+    issuer: str | None = None,
+    timeout: float | None = None,
+)
+```
+
+Holds the configuration of one user pool and its own JWKS cache (separate from the cache
+used by `decode` / `decode_async`). Create it once, e.g. at application start-up, and reuse it.
+
+- `region`, `userpool_id`, `app_client_id`, `token_use`, `leeway`: as for `decode`.
+- `jwks_url`: URL or local file path of the JWKS (e.g. of a local Cognito emulator).
+  Defaults to the `AWS_COGNITO_JWKS_PATH` environment variable, read once in the
+  constructor, or else to the user pool JWKS URL.
+- `issuer`: the expected `iss`. Defaults to `https://cognito-idp.<region>.amazonaws.com/<userpool_id>`.
+  When the JWKS is not the user pool one (`jwks_url` or `AWS_COGNITO_JWKS_PATH`), `iss` is
+  not checked unless `issuer` is passed.
+- `timeout`: seconds for downloading the JWKS (default `constants.HTTP_TIMEOUT`, 10).
+
+The constructor raises `InvalidUserPoolError` for an invalid region / user pool id (when the
+user pool JWKS is used), `ValueError` for a negative `leeway`, and emits a `UserWarning`
+for an empty `app_client_id` or a plain-HTTP `jwks_url` other than localhost.
+
+Methods:
+
+- `verify(token, *, testmode=False) -> dict`: needs the `sync` extra.
+- `async verify_async(token, *, testmode=False) -> dict`: needs the `async` extra.
+- `clear_cache() -> None`: forget the downloaded keys.
+
+Attributes: `region`, `userpool_id`, `app_client_id`, `token_use`, `leeway`, `jwks_url`
+(the resolved URL or path), `issuer`, `timeout`.
+
+## Exceptions
+
+All are importable from `cognitojwt` and subclass `CognitoJWTException`, so
+`except cognitojwt.CognitoJWTException` catches every verification failure.
+
+| Exception | Raised when | Typical HTTP answer |
+|---|---|---|
+| `MalformedTokenError` | not a compact JWS, non-ASCII, larger than 128 KiB, payload not a JSON object, no `kid` header | 401 |
+| `InvalidSignatureError` | the signature doesn't match, the algorithm is not RS256, or the `kid` is not in the JWKS ("Public key not found in jwks.json") | 401 |
+| `TokenExpiredError` | the current time is >= `exp` + `leeway` | 401 |
+| `InvalidClaimError` | missing / invalid `exp`, invalid `iat` or `iat` in the future, wrong `iss`, wrong `token_use`, wrong `aud` / `client_id` | 401 |
+| `InvalidUserPoolError` | `region` or `userpool_id` is not a valid AWS value | 401 or 500, depending on where the values come from |
+| `JWKSError` | the JWKS can't be downloaded (network error, HTTP error, timeout), read from a file, or parsed | 503 |
+
+Order matters when catching: catch `JWKSError` (or other subclasses) before `CognitoJWTException`.
+
+```python
+try:
+    claims = verifier.verify(token)
+except cognitojwt.JWKSError:
+    ...  # the user pool keys are unavailable: answer 503 and retry later
+except cognitojwt.TokenExpiredError:
+    ...  # ask the client to refresh the token: 401
+except cognitojwt.CognitoJWTException:
+    ...  # any other invalid token: 401
+```
+
+## What is verified, in order
+
+1. The token is parsed and its `kid` header is read (`MalformedTokenError`).
+2. The public key with that `kid` is taken from the user pool JWKS
+   `https://cognito-idp.<region>.amazonaws.com/<userpool_id>/.well-known/jwks.json`
+   (`JWKSError`, `InvalidSignatureError`).
+3. The RS256 signature is verified; no other algorithm is accepted (`InvalidSignatureError`).
+4. `exp` must be present and in the future: rejected from `exp` + `leeway` on (`TokenExpiredError`).
+   Skipped with `testmode=True`.
+5. `iat`, if present, must not be more than 5 minutes + `leeway` in the future (`InvalidClaimError`).
+   Skipped with `testmode=True`.
+6. `iss` must be the user pool URL (`InvalidClaimError`). Skipped when a custom JWKS is used,
+   unless `CognitoJWTVerifier(issuer=...)` is passed.
+7. `token_use` must match, when `token_use` is passed (`InvalidClaimError`).
+8. `aud` (ID token) or `client_id` (access token) must be one of `app_client_id`, when it is
+   passed (`InvalidClaimError`). `aud` may be a list.
+
+Not verified: `scope`, `cognito:groups`, `auth_time`, `nbf`, token revocation (Cognito
+revocation is not visible in the JWT; use the Cognito API for that). Check `scope` /
+groups yourself:
+
+```python
+claims = verifier.verify(token)
+if 'orders/read' not in claims.get('scope', '').split():
+    raise PermissionError
+if 'admin' not in claims.get('cognito:groups', []):
+    raise PermissionError
+```
+
+## JWKS cache
+
+- The JWKS is downloaded on first use per URL and cached in memory, per process.
+  `decode` and `decode_async` have module-level caches; each `CognitoJWTVerifier` has its own.
+- Concurrent calls share one download: a lock per URL for threads, a shared task for asyncio.
+- Unknown `kid` (key rotation): the JWKS is downloaded again, at most once per
+  `constants.KEYS_REFRESH_INTERVAL` (60 s), so forged `kid`s can't force downloads.
+- Expiry: the JWKS is downloaded again when it is older than `constants.KEYS_MAX_AGE`
+  (6 hours), so keys removed from the user pool stop being trusted.
+- Stale-if-error: if that re-download fails, the cached keys keep being used, a warning
+  is logged to the `cognitojwt` logger, and the download is retried after 60 s.
+- Size: at most `constants.KEYS_CACHE_SIZE` (256) URLs; the least recently used is dropped.
+- A 4xx answer (e.g. a user pool that doesn't exist) is remembered for 60 s; 5xx, 408,
+  429 and network errors are not remembered.
+- Key objects built from the JWKS are cached too, so they aren't rebuilt on every call.
+
+Inspect / reset:
+
+```python
+from cognitojwt import jwt_sync, jwt_async
+
+jwt_sync.get_keys.cache_info()   # CacheInfo(hits, misses, maxsize, currsize)
+jwt_sync.get_keys.cache_clear()
+jwt_async.get_keys_async.cache_info()
+jwt_async.get_keys_async.cache_clear()
+verifier.clear_cache()
+```
+
+## Custom JWKS: private VPC, emulators
+
+Set `AWS_COGNITO_JWKS_PATH` to a local file path or URL of a `jwks.json` to use it instead
+of the Cognito endpoint (e.g. in a VPC without internet access, or with a local emulator):
+
+- `region` and `userpool_id` are then not validated, and `iss` is not checked;
+- a plain `http://` URL other than localhost emits a `UserWarning`.
+
+For one user pool only, pass `jwks_url` (and optionally `issuer`) to `CognitoJWTVerifier`.
+
+## Lower-level helpers
+
+Kept for backward compatibility; most code needs only `decode` or `CognitoJWTVerifier`.
+
+`cognitojwt.jwt_sync`:
+
+- `get_keys(keys_url, force_refresh=False) -> list[dict]`: the JWKS keys, cached.
+- `get_public_key(token, region, userpool_id) -> joserfc.jwk.Key`: the key the token is
+  signed with; the signature is not verified.
+
+`cognitojwt.jwt_async`: `get_keys_async` and `get_public_key_async`, the coroutine versions.
+
+`cognitojwt.token_utils`:
+
+- `get_unverified_headers(token) -> dict` and `get_unverified_claims(token) -> dict`:
+  parse without verifying. Never trust their output for authorization.
+- `verify_signature(token, public_key) -> dict`: verify the RS256 signature, return the claims.
+- `verify_claims(claims, region, userpool_id, app_client_id=None, testmode=False,
+  verify_issuer=True, *, token_use=None, leeway=0, issuer=None) -> None`: all claim checks.
+- `check_expired(exp, testmode=False, *, leeway=0)`, `check_issued_at(iat, *, leeway=0)`,
+  `check_issuer(claims, region, userpool_id, *, issuer=None)`,
+  `check_token_use(claims, token_use)`, `check_client_id(claims, app_client_id)`:
+  the individual checks.
+
+`cognitojwt.constants` (read at call time, so they can be changed at runtime):
+
+| Name | Value | Meaning |
+|---|---|---|
+| `JWKS_PATH_ENV` | `'AWS_COGNITO_JWKS_PATH'` | environment variable for a custom JWKS |
+| `ALLOWED_ALGORITHMS` | `('RS256',)` | accepted signature algorithms |
+| `HTTP_TIMEOUT` | `10` | JWKS download timeout, seconds |
+| `KEYS_REFRESH_INTERVAL` | `60` | minimal interval between re-downloads, seconds |
+| `KEYS_MAX_AGE` | `21600` | JWKS expiry, seconds (6 hours) |
+| `KEYS_CACHE_SIZE` | `256` | maximal number of cached JWKS |
+| `MAX_TOKEN_SIZE` | `131072` | tokens larger than this (bytes) are rejected before parsing |
+| `MAX_IAT_SKEW` | `300` | tolerated `iat` in the future, seconds, on top of `leeway` |
+
+## Examples
+
+### FastAPI dependency
+
+```python
+import cognitojwt
+from fastapi import Depends, FastAPI, HTTPException, Request
+
+verifier = cognitojwt.CognitoJWTVerifier(REGION, USERPOOL_ID, APP_CLIENT_ID, token_use='access')
+app = FastAPI()
+
+
+async def current_user(request: Request) -> dict:
+    scheme, _, token = request.headers.get('Authorization', '').partition(' ')
+    if scheme.lower() != 'bearer' or not token:
+        raise HTTPException(401, 'Missing bearer token')
+    try:
+        return await verifier.verify_async(token)
+    except cognitojwt.JWKSError:
+        raise HTTPException(503, 'Authentication is temporarily unavailable')
+    except cognitojwt.CognitoJWTException:
+        raise HTTPException(401, 'Invalid token')
+
+
+@app.get('/me')
+async def me(user: dict = Depends(current_user)) -> dict:
+    return {'sub': user['sub']}
+```
+
+### Several user pools (multi-tenant)
+
+Look the pool up in your own configuration, never take it from the unverified token:
+
+```python
+VERIFIERS = {
+    'tenant-a': cognitojwt.CognitoJWTVerifier('eu-west-1', 'eu-west-1_AAAAAAAAA', 'client-a'),
+    'tenant-b': cognitojwt.CognitoJWTVerifier('us-east-1', 'us-east-1_BBBBBBBBB', 'client-b'),
+}
+
+def verify_for_tenant(tenant: str, token: str) -> dict:
+    verifier = VERIFIERS.get(tenant)
+    if verifier is None:
+        raise PermissionError('Unknown tenant')
+    return verifier.verify(token)
+```
+
+### Tests with a local key
+
+```python
+import json
+from joserfc import jwk, jwt
+
+key = jwk.RSAKey.generate_key(2048, parameters={'kid': 'test', 'alg': 'RS256'})
+path.write_text(json.dumps({'keys': [key.as_dict(private=False)]}))
+verifier = cognitojwt.CognitoJWTVerifier('local', 'local_pool', jwks_url=str(path))
+token = jwt.encode({'alg': 'RS256', 'kid': 'test'}, {'sub': 'u', 'token_use': 'access', 'exp': 2_000_000_000}, key)
+assert verifier.verify(token)['sub'] == 'u'
+```
+
+## Common mistakes
+
+- Not passing `app_client_id`: then a token issued for any app client of the pool is accepted.
+- Taking `region` / `userpool_id` from the token's own `iss` before it is verified.
+- Using `testmode=True` outside tests.
+- Passing the whole `Authorization` header (`'Bearer ...'`) instead of the token.
+- Checking only `token_use` but not `app_client_id`, or neither.
+- Creating a new `CognitoJWTVerifier` per request: each has its own cache, so every
+  request would download the JWKS. Create it once.
+- Catching `CognitoJWTException` before `JWKSError`: the subclass branch never runs.
+- Expecting `cognitojwt.decode` without the `sync` extra (or `decode_async` without `async`):
+  the function doesn't exist then (`AttributeError`).
+
+## Compatibility
+
+- Python 3.8 – 3.14; `joserfc >= 0.9.0`, `requests >= 2.32.4`, `aiohttp >= 3.9.4`.
+- Versions 1.x keep backward compatibility: new parameters are keyword-only and optional,
+  new exceptions subclass `CognitoJWTException`, error messages are stable.
+- Changelog: https://github.com/borisrozumnuk/cognitojwt/blob/master/CHANGELOG.md

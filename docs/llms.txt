@@ -1,0 +1,30 @@
+# cognitojwt
+
+> Python library to decode and verify Amazon Cognito JWTs (ID and access tokens): RS256 signature against the user pool JWKS, `exp`, `iat`, `iss`, `token_use` and `aud` / `client_id`. Sync API on `requests`, async API on `aiohttp`. Python >= 3.8, MIT license. Current version: 1.7.0.
+
+- Install with `pip install "cognitojwt[sync]"` (for `cognitojwt.decode`) or `pip install "cognitojwt[async]"` (for `cognitojwt.decode_async`).
+- `cognitojwt.decode(token, region, userpool_id, app_client_id=None, testmode=False, *, token_use=None, leeway=0)` returns the claims as a `dict`, or raises a subclass of `cognitojwt.CognitoJWTException`.
+- `cognitojwt.CognitoJWTVerifier(region, userpool_id, app_client_id, *, token_use=None, leeway=0, jwks_url=None, issuer=None, timeout=None)` keeps one pool's configuration and key cache; call `.verify(token)` or `await .verify_async(token)`. Create it once, not per request.
+- `cognitojwt.JWKSError` means the keys are unavailable (answer 503); every other `CognitoJWTException` subclass means an invalid token (answer 401). Catch `JWKSError` first.
+- Always pass `app_client_id`; never take the region or user pool id from the unverified token; never use `testmode=True` in production.
+
+## Docs
+
+- [Full reference](https://borisrozumnuk.github.io/cognitojwt/llms-full.txt): the whole API, parameters, exceptions, verification order, cache behaviour, examples and common mistakes in one Markdown file
+- [README](https://raw.githubusercontent.com/borisrozumnuk/cognitojwt/master/README.md): installation and usage
+- [Changelog](https://raw.githubusercontent.com/borisrozumnuk/cognitojwt/master/CHANGELOG.md): changes per version
+
+## Source
+
+- [cognitojwt/jwt_sync.py](https://raw.githubusercontent.com/borisrozumnuk/cognitojwt/master/cognitojwt/jwt_sync.py): `decode`, `get_keys`, `get_public_key`
+- [cognitojwt/jwt_async.py](https://raw.githubusercontent.com/borisrozumnuk/cognitojwt/master/cognitojwt/jwt_async.py): `decode_async`, `get_keys_async`, `get_public_key_async`
+- [cognitojwt/verifier.py](https://raw.githubusercontent.com/borisrozumnuk/cognitojwt/master/cognitojwt/verifier.py): `CognitoJWTVerifier`
+- [cognitojwt/exceptions.py](https://raw.githubusercontent.com/borisrozumnuk/cognitojwt/master/cognitojwt/exceptions.py): exception classes
+- [cognitojwt/token_utils.py](https://raw.githubusercontent.com/borisrozumnuk/cognitojwt/master/cognitojwt/token_utils.py): claim checks and unverified parsing helpers
+- [cognitojwt/constants.py](https://raw.githubusercontent.com/borisrozumnuk/cognitojwt/master/cognitojwt/constants.py): timeouts, cache limits, URL templates
+
+## Optional
+
+- [GitHub repository](https://github.com/borisrozumnuk/cognitojwt): issues and pull requests
+- [PyPI](https://pypi.org/project/cognitojwt/): releases
+- [Amazon Cognito: verifying a JSON Web Token](https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-using-tokens-verifying-a-jwt.html): what AWS requires to check

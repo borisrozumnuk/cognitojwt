@@ -1,0 +1,11 @@
+version: 2
+updates:
+  # Actions, including the SHA-pinned pypa/gh-action-pypi-publish.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: monthly

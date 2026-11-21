@@ -19,3 +19,16 @@ KEYS_REFRESH_INTERVAL = 60
 # Tokens longer than this (bytes) are rejected before they are parsed. It is
 # above the largest token joserfc itself accepts, so no valid token is affected.
 MAX_TOKEN_SIZE = 128 * 1024
+
+# A token whose "iat" is further in the future than this (seconds, on top of
+# "leeway") is rejected. Generous, so a slightly wrong server clock is harmless.
+MAX_IAT_SKEW = 300
+
+# The JWKS is downloaded again when it is older than this (seconds), so keys
+# removed from the user pool stop being trusted. If the download fails, the old
+# keys are still used and the download is retried after KEYS_REFRESH_INTERVAL.
+KEYS_MAX_AGE = 6 * 60 * 60
+
+# Maximal number of JWKS (user pools) kept in the cache; the least recently
+# used one is dropped first.
+KEYS_CACHE_SIZE = 256
