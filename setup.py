@@ -5,10 +5,10 @@ from setuptools import setup
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-with open(os.path.join(HERE, 'README.md'), 'r', encoding='utf-8') as fh:
+with open(os.path.join(HERE, 'README.md'), encoding='utf-8') as fh:
     long_description = fh.read()
 
-with open(os.path.join(HERE, 'cognitojwt', '__init__.py'), 'r', encoding='utf-8') as fh:
+with open(os.path.join(HERE, 'cognitojwt', '__init__.py'), encoding='utf-8') as fh:
     version = re.search(r"^__version__ = '([^']+)'", fh.read(), re.M).group(1)
 
 
@@ -27,6 +27,7 @@ async_require = [
 test_require = sync_require + async_require + [
     'pytest>=7',
     'pytest-asyncio>=0.21',
+    'coverage[toml]>=6.5',
 ]
 
 
@@ -37,6 +38,10 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/borisrozumnuk/cognitojwt',
+    project_urls={
+        'Changelog': 'https://github.com/borisrozumnuk/cognitojwt/blob/master/CHANGELOG.md',
+        'Issues': 'https://github.com/borisrozumnuk/cognitojwt/issues',
+    },
     author='Boris Rozumniuk',
     author_email='borisrozumnuk@gmail.com',
     license='MIT',

@@ -5,3 +5,25 @@ build-backend = "setuptools.build_meta"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_default_fixture_loop_scope = "function"
+
+[tool.ruff]
+target-version = "py38"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B", "UP", "SIM", "RUF", "S"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "S105", "S106", "S107"]
+
+[tool.mypy]
+strict = true
+files = ["cognitojwt"]
+
+[tool.coverage.run]
+branch = true
+source = ["cognitojwt"]
+
+[tool.coverage.report]
+fail_under = 95
+show_missing = true

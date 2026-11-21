@@ -13,7 +13,7 @@ def _run_in_threads(target, count=20):
         barrier.wait()
         try:
             results.append(target())
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             errors.append(exc)
 
     threads = [threading.Thread(target=worker) for _ in range(count)]

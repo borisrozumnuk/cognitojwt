@@ -1,5 +1,39 @@
 # Changelog
 
+## 1.7.0
+
+New features. Existing code keeps working: every new parameter is optional and
+keyword-only, every new exception is a subclass of `CognitoJWTException`, and the
+error messages are unchanged.
+
+### Added
+- Exception subclasses, to tell a bad token (401) from an unavailable JWKS (503):
+  `MalformedTokenError`, `InvalidSignatureError`, `TokenExpiredError`,
+  `InvalidClaimError`, `InvalidUserPoolError` and `JWKSError`.
+- `CognitoJWTVerifier(region, userpool_id, app_client_id, *, token_use, leeway, jwks_url,
+  issuer, timeout)` with `.verify()` and `.verify_async()`: the configuration of one user
+  pool and its own key cache. `jwks_url` sets a custom JWKS per user pool, which the
+  `AWS_COGNITO_JWKS_PATH` environment variable can't do.
+- `token_use='id'` / `'access'` for `decode` and `decode_async`, to accept only that kind
+  of token (AWS recommends checking it).
+- `leeway` (seconds) for `decode` and `decode_async`: tolerated clock skew for `exp` and `iat`.
+- `get_keys.cache_info()` / `get_keys_async.cache_info()`, as with the former `lru_cache`.
+- `token_utils.check_token_use` and `token_utils.check_issued_at`.
+
+### Changed
+- `iat` more than 5 minutes (plus `leeway`) in the future is rejected. A missing `iat`
+  is still accepted, and `testmode=True` skips the check.
+- The cached JWKS is downloaded again after 6 hours (`constants.KEYS_MAX_AGE`), so keys
+  removed from the user pool stop being trusted; before, they were trusted until restart.
+  If that download fails, the cached keys are still used and a warning is logged.
+- The cache holds up to 256 JWKS (`constants.KEYS_CACHE_SIZE`), least recently used dropped first.
+- A 4xx answer for the JWKS (e.g. a user pool that doesn't exist) is remembered for a
+  minute, so such tokens don't cause a download each. 5xx, 408, 429 and network errors
+  are not remembered.
+- `decode` is about 2 times faster: the key objects built from the JWKS are cached.
+- CI also runs `ruff`, `mypy --strict`, a coverage check and the tests with the oldest
+  allowed dependencies; Dependabot keeps the GitHub Actions up to date.
+
 ## 1.6.1
 
 Security and robustness fixes. The public API is unchanged.

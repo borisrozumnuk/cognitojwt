@@ -34,7 +34,11 @@ def get_public_key(mode):
 
 
 def test_public_api():
-    assert set(cognitojwt.__all__) == {'CognitoJWTException', 'decode', 'decode_async'}
+    assert set(cognitojwt.__all__) == {
+        'CognitoJWTException', 'CognitoJWTVerifier', 'decode', 'decode_async',
+        'InvalidClaimError', 'InvalidSignatureError', 'InvalidUserPoolError', 'JWKSError',
+        'MalformedTokenError', 'TokenExpiredError',
+    }
     assert cognitojwt.decode is jwt_sync.decode
     assert cognitojwt.decode_async is jwt_async.decode_async
 
@@ -106,7 +110,7 @@ def test_issuer_not_checked_with_custom_jwks(decode, jwks_file, make_token):
 
 
 def test_tampered_payload(decode, jwks_file, make_token):
-    header, payload, signature = make_token().split('.')
+    header, _payload, signature = make_token().split('.')
     forged = make_token(sub='admin').split('.')[1]
     with pytest.raises(CognitoJWTException, match='Signature verification failed'):
         decode('.'.join([header, forged, signature]), REGION, USERPOOL_ID)
@@ -126,7 +130,7 @@ def test_forged_kid(decode, jwks_file, make_token, other_key, private_key):
 
 @pytest.mark.parametrize('alg', ['none', 'HS256'])
 def test_algorithm_confusion(decode, jwks_file, make_token, alg):
-    header, payload, _ = make_token().split('.')
+    _header, payload, _ = make_token().split('.')
     from joserfc.util import urlsafe_b64encode
     forged_header = urlsafe_b64encode(json.dumps({'alg': alg, 'kid': 'test-kid-1'}).encode()).decode()
     with pytest.raises(CognitoJWTException, match='Signature verification failed'):
@@ -211,7 +215,7 @@ def test_get_public_key(get_public_key, jwks_server, make_token, private_key):
 ])
 def test_invalid_region_or_pool_is_not_requested(decode, jwks_server, make_token, region, userpool_id):
     # These would point the JWKS URL to another host or path.
-    with pytest.raises(CognitoJWTException, match='Invalid (region|user pool id)'):
+    with pytest.raises(CognitoJWTException, match=r'Invalid (region|user pool id)'):
         decode(make_token(), region, userpool_id)
     assert jwks_server.requests == 0
 
@@ -243,3 +247,79 @@ def test_invalid_key_in_jwks(decode, jwks_file, make_token):
     jwks_file.write_text(json.dumps({'keys': [{'kid': 'test-kid-1', 'kty': 'RSA'}]}))
     with pytest.raises(CognitoJWTException, match='Invalid public key'):
         decode(make_token(), REGION, USERPOOL_ID)
+
+
+@pytest.mark.parametrize('case, error', [
+    ('expired', cognitojwt.TokenExpiredError),
+    ('no_exp', cognitojwt.InvalidClaimError),
+    ('wrong_client', cognitojwt.InvalidClaimError),
+    ('wrong_issuer', cognitojwt.InvalidClaimError),
+    ('tampered', cognitojwt.InvalidSignatureError),
+    ('unknown_key', cognitojwt.InvalidSignatureError),
+    ('malformed', cognitojwt.MalformedTokenError),
+    ('no_kid', cognitojwt.MalformedTokenError),
+    ('bad_region', cognitojwt.InvalidUserPoolError),
+    ('jwks_down', cognitojwt.JWKSError),
+])
+def test_error_types(decode, jwks_server, make_token, other_key, private_key, case, error):
+    from joserfc import jwt
+    kwargs = {}
+    region = REGION
+    token = make_token()
+    if case == 'expired':
+        token = make_token(exp=int(time.time()) - 10)
+    elif case == 'no_exp':
+        token = make_token(drop=['exp'])
+    elif case == 'wrong_client':
+        kwargs['app_client_id'] = 'another-client'
+    elif case == 'wrong_issuer':
+        token = make_token(iss='https://example.com')
+    elif case == 'tampered':
+        header, _, signature = token.split('.')
+        token = '.'.join([header, make_token(sub='admin').split('.')[1], signature])
+    elif case == 'unknown_key':
+        token = make_token(key=other_key)
+    elif case == 'malformed':
+        token = 'garbage'
+    elif case == 'no_kid':
+        token = jwt.encode({'alg': 'RS256'}, {'exp': int(time.time()) + 60}, private_key)
+    elif case == 'bad_region':
+        region = 'evil.example#'
+    elif case == 'jwks_down':
+        jwks_server.status = 503
+    with pytest.raises(error) as info:
+        decode(token, region, USERPOOL_ID, **kwargs)
+    assert isinstance(info.value, CognitoJWTException)
+
+
+def test_leeway(decode, jwks_file, make_token):
+    token = make_token(exp=int(time.time()) - 10)
+    assert decode(token, REGION, USERPOOL_ID, leeway=30)['sub'] == 'user-sub'
+    with pytest.raises(cognitojwt.TokenExpiredError):
+        decode(token, REGION, USERPOOL_ID, leeway=5)
+    with pytest.raises(ValueError, match='leeway'):
+        decode(make_token(), REGION, USERPOOL_ID, leeway=-1)
+
+
+def test_iat_in_the_future(decode, jwks_file, make_token):
+    now = int(time.time())
+    with pytest.raises(cognitojwt.InvalidClaimError, match='future'):
+        decode(make_token(iat=now + 3600), REGION, USERPOOL_ID)
+    # A slightly wrong clock is tolerated, and leeway adds to it.
+    assert decode(make_token(iat=now + 60), REGION, USERPOOL_ID)['sub'] == 'user-sub'
+    assert decode(make_token(iat=now + 3600), REGION, USERPOOL_ID, leeway=3600)['sub'] == 'user-sub'
+    assert decode(make_token(iat=now + 3600), REGION, USERPOOL_ID, testmode=True)['sub'] == 'user-sub'
+    assert decode(make_token(drop=['iat']), REGION, USERPOOL_ID)['sub'] == 'user-sub'
+    with pytest.raises(cognitojwt.InvalidClaimError, match='iat'):
+        decode(make_token(iat='soon'), REGION, USERPOOL_ID)
+
+
+def test_token_use(decode, jwks_file, make_token):
+    assert decode(make_token('id'), REGION, USERPOOL_ID, token_use='id')['token_use'] == 'id'
+    with pytest.raises(cognitojwt.InvalidClaimError, match='token_use'):
+        decode(make_token('access'), REGION, USERPOOL_ID, token_use='id')
+    with pytest.raises(cognitojwt.InvalidClaimError, match='token_use'):
+        decode(make_token('id'), REGION, USERPOOL_ID, APP_CLIENT_ID, token_use='access')
+    for token_use in ('id', 'access'):
+        claims = decode(make_token(token_use), REGION, USERPOOL_ID, token_use=('id', 'access'))
+        assert claims['token_use'] == token_use
