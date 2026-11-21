@@ -1,94 +1,28 @@
-import os
-import tempfile
+import asyncio
 
-import aiohttp
 import pytest
-import cognitojwt
-from joserfc import jwk
 
-from cognitojwt.constants import PUBLIC_KEYS_URL_TEMPLATE
+from cognitojwt import jwt_async
 
-TEST_ID_TOKEN = os.environ['TEST_ID_TOKEN']
-TEST_ACCESS_TOKEN = os.environ['TEST_ACCESS_TOKEN']
-
-AWS_COGNITO_REGION = os.environ['AWS_COGNITO_REGION']
-AWS_COGNITO_USERPOOL_ID = os.environ['AWS_COGNITO_USERPOOL_ID']
-AWS_COGNITO_APP_CLIENT_ID = os.environ['AWS_COGNITO_APP_CLIENT_ID']
+from .conftest import REGION, USERPOOL_ID
 
 
 @pytest.mark.asyncio
-async def test_decode_id_token_with_app_id():
-    claims = await cognitojwt.decode_async(
-        TEST_ID_TOKEN,
-        AWS_COGNITO_REGION,
-        AWS_COGNITO_USERPOOL_ID,
-        AWS_COGNITO_APP_CLIENT_ID,
-        testmode=True
-    )
-    assert isinstance(claims, dict)
+async def test_concurrent_requests_share_one_download(jwks_server, make_token):
+    token = make_token()
+    results = await asyncio.gather(*(
+        jwt_async.decode_async(token, REGION, USERPOOL_ID) for _ in range(20)
+    ))
+    assert all(r['sub'] == 'user-sub' for r in results)
+    assert jwks_server.requests == 1
+    assert not jwt_async._in_flight
 
 
 @pytest.mark.asyncio
-async def test_decode_id_token_without_app_id():
-    claims = await cognitojwt.decode_async(
-        TEST_ID_TOKEN,
-        AWS_COGNITO_REGION,
-        AWS_COGNITO_USERPOOL_ID,
-        testmode=True
-    )
-    assert isinstance(claims, dict)
-
-
-@pytest.mark.asyncio
-async def test_decode_access_token_with_app_id():
-    claims = await cognitojwt.jwt_async.decode_async(
-        TEST_ID_TOKEN,
-        AWS_COGNITO_REGION,
-        AWS_COGNITO_USERPOOL_ID,
-        AWS_COGNITO_APP_CLIENT_ID,
-        testmode=True
-    )
-    assert isinstance(claims, dict)
-
-
-@pytest.mark.asyncio
-async def test_decode_access_token_without_app_id():
-    claims = await cognitojwt.decode_async(
-        TEST_ACCESS_TOKEN,
-        AWS_COGNITO_REGION,
-        AWS_COGNITO_USERPOOL_ID,
-        testmode=True
-    )
-    assert isinstance(claims, dict)
-
-
-@pytest.mark.asyncio
-async def test_get_public_key():
-    pub_key = await cognitojwt.jwt_async.get_public_key_async(
-        TEST_ACCESS_TOKEN,
-        AWS_COGNITO_REGION,
-        AWS_COGNITO_USERPOOL_ID
-    )
-    assert isinstance(pub_key, jwt.RSAKey)
-
-
-@pytest.mark.asyncio
-async def test_get_public_key_local_jwks():
-
-    keys_url = PUBLIC_KEYS_URL_TEMPLATE.format(AWS_COGNITO_REGION, AWS_COGNITO_USERPOOL_ID)
-    async with aiohttp.ClientSession() as session:
-        async with session.get(keys_url) as resp:
-            response = await resp.text()
-
-    with tempfile.NamedTemporaryFile(suffix='.json') as tf:
-        tf.write(response.encode('utf-8'))
-        tf.seek(0)
-        os.environ['AWS_COGNITO_JWKS_PATH'] = tf.name
-
-        pub_key = await cognitojwt.jwt_async.get_public_key_async(
-            TEST_ACCESS_TOKEN,
-            AWS_COGNITO_REGION,
-            AWS_COGNITO_USERPOOL_ID
-        )
-        del os.environ['AWS_COGNITO_JWKS_PATH']
-    assert isinstance(pub_key, jwt.RSAKey)
+async def test_get_keys_async(jwks_server, private_key):
+    url = jwks_server.base_url + '/jwks.json'
+    keys = await jwt_async.get_keys_async(url)
+    assert [k['kid'] for k in keys] == [private_key.kid]
+    assert await jwt_async.get_keys_async(url) is keys
+    await jwt_async.get_keys_async(url, force_refresh=True)
+    assert jwks_server.requests == 2
