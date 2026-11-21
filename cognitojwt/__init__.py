@@ -1,22 +1,19 @@
+from importlib.util import find_spec
+
 from .exceptions import CognitoJWTException
 
 name = 'cognitojwt'
-
+__version__ = '1.6.0'
 
 __all__ = ['CognitoJWTException']
 
-
-try:
-    import requests
+# ``decode`` / ``decode_async`` are available only when the matching extra
+# (``cognitojwt[sync]`` / ``cognitojwt[async]``) is installed. Errors other than
+# a missing HTTP client are not swallowed, so a broken install fails loudly.
+if find_spec('requests') is not None:
     from .jwt_sync import decode
     __all__.append('decode')
-except ImportError:
-    pass
 
-try:
-    import aiohttp
-    from async_lru import alru_cache
+if find_spec('aiohttp') is not None:
     from .jwt_async import decode_async
     __all__.append('decode_async')
-except ImportError:
-    pass
