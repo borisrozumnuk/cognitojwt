@@ -12,6 +12,15 @@ In order to avoid installing unnecessary dependencies I separated installation f
 * Async mode - `pip install cognitojwt[async]`
 * Sync mode - `pip install cognitojwt[sync]`
 
+### Features
+* Amazon Cognito JWT verification
+* AWS Cognito User Pools support
+* ID token and Access token validation
+* JWKS key retrieval and caching
+* Automatic JWKS key rotation handling
+* Synchronous and asynchronous APIs
+* Requests and aiohttp support
+
 ### Usage
 
 ```python
